@@ -22,7 +22,7 @@ char * serpathfifo = "/tmp/serpathfifo";
 void writetofifo(char* path, char* msg){
   char arrrg[80];
   // Open FIFO for write only
-  fd = open(path, O_WRONLY|O_NONBLOCK);
+  int fd = open(path, O_WRONLY|O_NONBLOCK);
 
   // Take an input arr2ing from user.
   // 80 is maximum length
@@ -30,7 +30,7 @@ void writetofifo(char* path, char* msg){
 
   // Write the input arr2ing on FIFO
   // and close it
-  write(fd, arrrg, strlen(arr2)+1);
+  write(fd, arrrg, strlen(arrrg)+1);
   close(fd);
 }
 
