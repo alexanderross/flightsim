@@ -36,10 +36,8 @@ void activatereset(void){
 void checkpipestate(char* path){
 	char arr1[80];
 	// Open FIFO for Read only
-	printf("OPENING FIFO \n");
 	int fd = open(path, O_RDONLY|O_NONBLOCK);
 
-	printf("READING FIFO \n");
 	// Read from FIFO
 	int res = read(fd, arr1, sizeof(arr1));
 	if(res > 0){
@@ -48,7 +46,6 @@ void checkpipestate(char* path){
 			// Print the read message
 			printf("Read: %s\n", arr1);
 	}
-	printf("CLOSING FIFO \n");
 	close(fd);
 }
 
