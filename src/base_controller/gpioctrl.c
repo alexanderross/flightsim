@@ -17,9 +17,11 @@
 #define ResetSwPin 3
 #define LinkEnSwPin 0
 #define DEBOUNCE 10000
+#define ACTIVATERST 1000000
 
 int linkenableddown = 0;
 int resetdown = 0;
+int activatetime = 0;
 
 int linkenabled = 0;
 int buttondebounce = 0;
@@ -54,12 +56,8 @@ void togglelinkenabled(void){
 }
 
 void showlinkactive(void){
-	if(fork() == 0){
-		digitalWrite(LinkActPin, HIGH);
-		sleep(1);
-		digitalWrite(LinkActPin, LOW);
-		kill(getpid(), SIGKILL);
-	}
+	digitalWrite(LinkActPin, 1);
+	activatetime = ACTIVATERST;
 }
 
 void activatereset(void){
@@ -139,6 +137,12 @@ int main(void) {
 				}
 			}else{
 				buttondebounce -= 1;
+			}
+
+			if(activatetime == 0){
+				digitalWrite(LinkActPin, 0);
+			}else{
+				activatetime -= 1;
 			}
 
 		}
