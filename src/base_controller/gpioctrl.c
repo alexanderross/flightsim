@@ -130,7 +130,7 @@ int main(void) {
 				}else if(!enablevalue){
 					linkenableddown = 0;
 				}
-			else{
+			}else{
 				buttondebounce -= 1;
 			}
 
