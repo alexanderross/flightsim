@@ -12,7 +12,7 @@
 #define LinkActPin 1
 #define ResetSwPin 3
 #define LinkEnSwPin 0
-#define DEBOUNCE 100
+#define DEBOUNCE 1000
 
 int linkenableddown = 0;
 int resetdown = 0;
@@ -120,6 +120,7 @@ int main(void) {
 				if(resetvalue && resetdown == 0){
 					activatereset();
 					resetdown = 1;
+					buttondebounce = DEBOUNCE;
 				}else if(!resetvalue){
 					resetdown = 0;
 				}
@@ -127,6 +128,7 @@ int main(void) {
 				if(enablevalue && linkenableddown == 0){
 					togglelinkenabled();
 					linkenableddown = 1;
+					buttondebounce = DEBOUNCE;
 				}else if(!enablevalue){
 					linkenableddown = 0;
 				}
