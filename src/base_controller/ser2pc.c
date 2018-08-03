@@ -84,7 +84,7 @@ void set_mincount(int fd, int mcount)
 void writetofifo(char* path, char* msg){
     char arrrg[80];
     // Open FIFO for write only
-    fd = open(path, O_WRONLY);
+    fd = open(path, O_WRONLY|O_NONBLOCK);
 
     // Take an input arr2ing from user.
     // 80 is maximum length
@@ -140,14 +140,11 @@ int main()
     //set_mincount(fd, 0);                /* set to pure timed read */
 
     /* simple output */
-    wlen = write(fd, "Hello!\n", 7);
+    wlen = write(fd, "I'm ONLINE!\n", 7);
     if (wlen != 7) {
       printf("Error from write: %d, %d\n", wlen, errno);
     }
     tcdrain(fd);    /* delay for output */
-
-    bool linkact = false;
-    bool linkenabled = true;
 
     do {
         size_t buf_idx = 0;
@@ -180,14 +177,14 @@ int main()
                 //reset resetrequested flag
                 resetrequested = 0;
             }else if(linkenabled){
-              // Send link enabled to panel
-              writetofifo(panelpathfifo, "E!");
+              // Send link active to panel
+              writetofifo(panelpathfifo, "A!");
               // Forward command to 2.4
               writetofifo(rfpathfifo, tmp);
             }
             printf("Read %d: \"%s\"\n", buf_idx, tmp);
         } else if (buf_idx < -1) {
           //This will happen so let's juuuuuust ignore it.
-        }   
+        }  
     } while (1);
 }

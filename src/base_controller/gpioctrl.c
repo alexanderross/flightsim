@@ -16,9 +16,31 @@
 
 int linkenabled = 0;
 
+char * panelpathfifo = "/tmp/panelfifo";
+char * serpathfifo = "/tmp/serpathfifo";
+
+void writetofifo(char* path, char* msg){
+  char arrrg[80];
+  // Open FIFO for write only
+  fd = open(path, O_WRONLY|O_NONBLOCK);
+
+  // Take an input arr2ing from user.
+  // 80 is maximum length
+  fgets(arrrg, 80, msg);
+
+  // Write the input arr2ing on FIFO
+  // and close it
+  write(fd, arrrg, strlen(arr2)+1);
+  close(fd);
+}
+
 void setlinkenabled(int state){
 	digitalWrite(LinkEnPin, state);
 	linkenabled = state;
+
+	char enabledmsg[3] = {'E','0','!'};
+	if(linkenabled){ enabledmsg[1] = '1';}
+	writetofifo(serpathfifo, enabledmsg);
 }
 
 void togglelinkenabled(void){
@@ -27,10 +49,19 @@ void togglelinkenabled(void){
 	//Send into pipe to enable/disable
 }
 
+void showlinkactive(void){
+	if(fork() == 0){
+		digitalWrite(LinkActPin, HIGH);
+		sleep(1);
+		digitalWrite(LinkActPin, LOW);
+	}
+}
+
 void activatereset(void){
 	//Send reset signal
 	setlinkenabled(0);
 	printf("ACTIVATE RESET \n");
+	writetofifo(serpathfifo, "R!");
 }
 
 void checkpipestate(char* path){
@@ -45,6 +76,7 @@ void checkpipestate(char* path){
 			//Check for enabled signal
 			// Print the read message
 			printf("Read: %s\n", arr1);
+			if(strcmp(arr1, "A!")){showlinkactive();}
 	}
 	close(fd);
 }
@@ -54,12 +86,11 @@ int main(void) {
 			printf("setup wiringPi failed !\n");
 			return -1;
 		}
-
-		char * panelpathfifo = "/tmp/panelfifo";
 		
 		// Creating the named file(FIFO)
 		// mkfifo(<pathname>, <permission>)
 		mkfifo(panelpathfifo, 0666);
+		mkfifo(serpathfifo, 0666);
 
 
 		int activeoutput[4] = {PitchPin, RollPin, LinkEnPin, LinkActPin};
