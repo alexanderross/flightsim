@@ -17,7 +17,7 @@
 #define ResetSwPin 3
 #define LinkEnSwPin 0
 #define DEBOUNCE 10000
-#define ACTIVATERST 1000000
+#define ACTIVATERST 10000
 
 int linkenableddown = 0;
 int resetdown = 0;
@@ -116,6 +116,7 @@ int main(void) {
 
 		while(1) {
 			checkpipestate(panelpathfifo);
+
 			int resetvalue = digitalRead(ResetSwPin);
 			int enablevalue = digitalRead(LinkEnSwPin);
 
