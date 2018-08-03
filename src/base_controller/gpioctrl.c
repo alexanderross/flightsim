@@ -13,6 +13,8 @@
 #define ResetSwPin 3
 #define LinkEnSwPin 0
 
+#define DEBOUNCE 1000000
+
 
 int linkenabled = 0;
 
@@ -112,12 +114,12 @@ int main(void) {
 
 			if(digitalRead(ResetSwPin) && buttondebounce == 0){
 				activatereset();
-				buttondebounce = 1000000;
+				buttondebounce = DEBOUNCE;
 			}
 
 			if(digitalRead(LinkEnSwPin) && buttondebounce == 0){
 				togglelinkenabled();
-				buttondebounce = 1000000;
+				buttondebounce = DEBOUNCE;
 			}
 
 			if(buttondebounce>0){ buttondebounce -= 1;}
