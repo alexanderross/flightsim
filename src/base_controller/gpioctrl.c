@@ -12,7 +12,7 @@
 #define LinkActPin 1
 #define ResetSwPin 3
 #define LinkEnSwPin 0
-#define DEBOUNCE 1000
+#define DEBOUNCE 10000
 
 int linkenableddown = 0;
 int resetdown = 0;
