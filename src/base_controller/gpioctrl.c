@@ -54,6 +54,7 @@ void showlinkactive(void){
 		digitalWrite(LinkActPin, HIGH);
 		sleep(1);
 		digitalWrite(LinkActPin, LOW);
+		kill(getpid(), SIGKILL);
 	}
 }
 
