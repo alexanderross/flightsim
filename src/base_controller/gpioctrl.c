@@ -12,11 +12,13 @@
 #define LinkActPin 1
 #define ResetSwPin 3
 #define LinkEnSwPin 0
+#define DEBOUNCE 100
 
 int linkenableddown = 0;
 int resetdown = 0;
 
 int linkenabled = 0;
+int buttondebounce = 0;
 
 char * panelpathfifo = "/tmp/panelfifo";
 char * serpathfifo = "/tmp/serpathfifo";
@@ -114,18 +116,22 @@ int main(void) {
 			int resetvalue = digitalRead(ResetSwPin);
 			int enablevalue = digitalRead(LinkEnSwPin);
 
-			if(resetvalue && resetdown == 0){
-				activatereset();
-				resetdown = 1;
-			}else if(!resetvalue){
-				resetdown = 0;
-			}
+			if(buttondebounce <= 0){
+				if(resetvalue && resetdown == 0){
+					activatereset();
+					resetdown = 1;
+				}else if(!resetvalue){
+					resetdown = 0;
+				}
 
-			if(enablevalue && linkenableddown == 0){
-				togglelinkenabled();
-				linkenableddown = 1;
-			}else if(!enablevalue){
-				linkenableddown = 0;
+				if(enablevalue && linkenableddown == 0){
+					togglelinkenabled();
+					linkenableddown = 1;
+				}else if(!enablevalue){
+					linkenableddown = 0;
+				}
+			else{
+				buttondebounce -= 1;
 			}
 
 		}
