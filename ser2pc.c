@@ -13,6 +13,9 @@ const char STOP_CHAR = '>';
 const char START_CHAR = '<';
 const char MSG_DELIM = '!';
 
+_Bool linkenabled = true;
+_Bool resetrequested = false;
+
 /* ser2pc
 *  This takes the input from flight sim and translates into common messages to send to the socket that is 
 *  shared by all 3 of the base controller's duties/scripts.
@@ -74,6 +77,23 @@ void set_mincount(int fd, int mcount)
         printf("Error tcsetattr: %s\n", strerror(errno));
 }
 
+bool checklinkenabled(char* path){
+    char arr1[80];
+    // Open FIFO for Read only
+    fd = open(path, O_RDONLY);
+
+    // Read from FIFO
+    read(fd, arr1, sizeof(arr1));
+
+    //Check for reset (reset sets enabled to false) else
+    //Check for enabled signal
+
+    // Print the read message
+    printf("Read: %s\n", arr1);
+    close(fd);
+    return true;
+}
+
 
 int main()
 {
@@ -81,13 +101,20 @@ int main()
     char *portname = PORTNAME;
     int fd;
     int wlen;
+
+    char * panelpathfifo = "/tmp/panelfifo";
+ 
+    // Creating the named file(FIFO)
+    // mkfifo(<pathname>, <permission>)
+    mkfifo(panelpathfifo, 0666);
+
     printf("STARTING");
     fd = open(portname, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fd < 0) {
         printf("Error opening %s: %s\n", portname, strerror(errno));
         return -1;
     }
-    /*baudrate 115200, 8 bits, no parity, 1 stop bit */
+    /*baudrate 115200, 8 bits, no parity, 1 stop bit (8N1) */
     set_interface_attribs(fd, B115200);
     //set_mincount(fd, 0);                /* set to pure timed read */
 
@@ -113,7 +140,7 @@ int main()
         	    buf_idx++;
         	}
 
-            if (buf_idx > 0 && '!' == buf[buf_idx - 1]){
+            if (buf_idx > 0 && is_reserved_char(buf[buf_idx - 1])){
                 break;
             }
         }  
@@ -122,6 +149,16 @@ int main()
 	        char tmp[BUFFLEN];
 	        strcpy(tmp,buf);
             tmp[buf_idx] = 0;
+
+            linkenabled = checklinkenabled();
+
+            if(resetrequested){
+                //send reset command to axes
+                //reset resetrequested flag
+            }else if(linkenabled){
+              // Send link enabled to panel
+              // Forward command to 2.4
+            }
             printf("Read %d: \"%s\"\n", buf_idx, tmp);
         } else if (buf_idx < -1) {
           //This will happen so let's juuuuuust ignore it.
