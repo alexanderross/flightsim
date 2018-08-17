@@ -14,7 +14,8 @@
 #define RollPin 5
 #define LinkEnPin 6
 #define LinkActPin 1
-#define ResetSwPin 3
+
+#define ResetSwPin 2
 #define LinkEnSwPin 0
 #define DEBOUNCE 10000
 #define ACTIVATERST 50000
@@ -44,8 +45,8 @@ void setlinkenabled(int state){
 	digitalWrite(LinkEnPin, state);
 	linkenabled = state;
 
-	char enabledmsg[3] = {'E','0','!'};
-	if(linkenabled){ enabledmsg[1] = '1';}
+	char enabledmsg[3] = {'D','!'};
+	if(linkenabled){ enabledmsg[0] = 'E';}
 	writetofifo(serpathfifo, enabledmsg);
 }
 
@@ -55,9 +56,22 @@ void togglelinkenabled(void){
 	//Send into pipe to enable/disable
 }
 
+
+//For these, we set them on, and every time we get an active signal, we 'bump' the active time
+//To keep the LED on. The main loop decrements these counts and when they're zero, the active led goes byebye
 void showlinkactive(void){
 	digitalWrite(LinkActPin, 1);
 	activatetime = ACTIVATERST;
+}
+
+void showRollAxisUp(void){
+	digitalWrite(RollPin, 1);
+	rollcommtime = ACTIVATERST;
+}
+
+void showPitchAxisUp(void){
+	digitalWrite(PitchPin, 1);
+	pitchcommtime = ACTIVATERST;
 }
 
 void activatereset(void){
@@ -68,7 +82,8 @@ void activatereset(void){
 }
 
 void checkpipestate(char* path){
-	char arr1[80];
+	char arr1[2];
+	// Incoming commands are 2 bytes
 	// Open FIFO for Read only
 	int fd = open(path, O_RDONLY|O_NONBLOCK);
 
@@ -79,7 +94,10 @@ void checkpipestate(char* path){
 			//Check for enabled signal
 			// Print the read message
 			printf("Read: %s\n", arr1);
+
 			if(strcmp(arr1, "A!")){showlinkactive();}
+			if(strcmp(arr1, "P!")){showPitchAxisUp();}
+			if(strcmp(arr1, "r!")){showRollAxisUp();}
 	}
 	close(fd);
 }
@@ -144,6 +162,18 @@ int main(void) {
 				digitalWrite(LinkActPin, 0);
 			}else{
 				activatetime -= 1;
+			}
+
+			if(rollcommtime == 0){
+				digitalWrite(RollPin, 0);
+			}else{
+				rollcommtime -= 1;
+			}
+
+			if(pitchcommtime == 0){
+				digitalWrite(PitchPin, 0);
+			}else{
+				pitchcommtime -= 1;
 			}
 
 		}

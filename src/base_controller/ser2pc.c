@@ -86,10 +86,6 @@ void writetofifo(char* path, char* msg){
     // Open FIFO for write only
     fd = open(path, O_WRONLY|O_NONBLOCK);
 
-    // Take an input arr2ing from user.
-    // 80 is maximum length
-    fgets(arrrg, 80, msg);
-
     // Write the input arr2ing on FIFO
     // and close it
     write(fd, arrrg, strlen(arr2)+1);
