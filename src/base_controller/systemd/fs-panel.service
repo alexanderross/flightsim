@@ -1,0 +1,10 @@
+[Unit]
+Description=Driver for Flight Sim Base Controller hardware input/output
+
+[Service]
+ExecStart=/home/pi/flightsim/src/base_controller/gpio-panel
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
