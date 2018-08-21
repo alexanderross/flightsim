@@ -1,4 +1,6 @@
 #!/bin/bash
+
+touch /tmp/fs-build-active
 export FS_BASE=/home/pi/flightsim/src/base_controller
 
 echo "Compiling GPIO panel executable"

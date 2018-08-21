@@ -1,0 +1,12 @@
+[Unit]
+Description=Compiler for flight sim drivers. Why not do it at every boot! Yay!
+
+[Service]
+Type=oneshot
+ExecStart=/home/pi/flightsim/src/base_controller/build.sh
+RemainAfterExit=true
+ExecStop=/home/pi/flightsim/src/base_controller/build_teardown.sh
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

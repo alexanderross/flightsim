@@ -1,0 +1,11 @@
+[Unit]
+Description=Driver for Flight Sim Base Controller RF24 Comms
+After=fs-build.service
+
+[Service]
+ExecStart=/home/pi/flightsim/src/base_controller/rf24-comm
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

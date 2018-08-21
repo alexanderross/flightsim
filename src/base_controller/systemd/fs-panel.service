@@ -1,5 +1,6 @@
 [Unit]
 Description=Driver for Flight Sim Base Controller hardware input/output
+After=fs-build.service
 
 [Service]
 ExecStart=/home/pi/flightsim/src/base_controller/gpio-panel
