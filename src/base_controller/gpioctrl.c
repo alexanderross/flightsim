@@ -23,6 +23,8 @@
 int linkenableddown = 0;
 int resetdown = 0;
 int activatetime = 0;
+int pitchcommtime = 0;
+int rollcommtime = 0;
 
 int linkenabled = 0;
 int buttondebounce = 0;
