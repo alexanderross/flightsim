@@ -17,8 +17,8 @@ const char STOP_CHAR = '>';
 const char START_CHAR = '<';
 const char MSG_DELIM = '!';
 
-_Bool linkenabled = true;
-_Bool resetrequested = false;
+_Bool linkenabled = 1;
+_Bool resetrequested = 0;
 
 /* ser2pc
 *  This takes the input from flight sim and translates into common messages to send to the socket that is 
@@ -61,7 +61,7 @@ int set_interface_attribs(int fd, int speed)
     return 0;
 }
 
-bool is_reserved_char(char bchar){
+_Bool is_reserved_char(char bchar){
   return (bchar == START_CHAR || bchar == STOP_CHAR || bchar == MSG_DELIM);
 }
 
@@ -84,18 +84,18 @@ void set_mincount(int fd, int mcount)
 void writetofifo(char* path, char* msg){
     char arrrg[80];
     // Open FIFO for write only
-    fd = open(path, O_WRONLY|O_NONBLOCK);
+    int fd = open(path, O_WRONLY|O_NONBLOCK);
 
     // Write the input arr2ing on FIFO
     // and close it
-    write(fd, arrrg, strlen(arr2)+1);
+    write(fd, arrrg, strlen(arrrg)+1);
     close(fd);
 }
 
-bool checklinkenabled(char* path){
+_Bool checklinkenabled(char* path){
     char arr1[80];
     // Open FIFO for Read only
-    fd = open(path, O_RDONLY);
+    int fd = open(path, O_RDONLY);
 
     // Read from FIFO
     int res = read(fd, arr1, sizeof(arr1));
@@ -164,7 +164,7 @@ int main()
             strcpy(tmp,buf);
             tmp[buf_idx] = 0;
 
-            linkenabled = checklinkenabled();
+            linkenabled = checklinkenabled(panelpathfifo);
 
             if(resetrequested){
                 //send reset command to axes
