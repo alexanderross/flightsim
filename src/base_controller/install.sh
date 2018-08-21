@@ -7,7 +7,7 @@ fi
 export FS_BASE=/home/pi/flightsim/src/base_controller
 
 install_fs_svc () {
-	echo "Installing $FS_BASE"
+	echo "Installing $1 service"
   cp $FS_BASE/systemd/$1.service /lib/systemd/system/
   chmod u+x /lib/systemd/system/$1.service
   systemctl enable $1
