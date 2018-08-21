@@ -144,10 +144,10 @@ int main()
 
     do {
         size_t buf_idx = 0;
-        char buf[BUFFLEN] = { 0 };
+        char buf[BUFFERLENGTH] = { 0 };
 
         //Loop reading single bytes into the buffer until we hit a significant character
-        while (buf_idx < BUFFLEN && linkenabled){
+        while (buf_idx < BUFFERLENGTH && linkenabled){
             int res = read(fd, &buf[buf_idx], 1);
 
             if(res > 0){
@@ -160,7 +160,7 @@ int main()
         }  
 
         if (buf_idx > 0) {
-            char tmp[BUFFLEN];
+            char tmp[BUFFERLENGTH];
             strcpy(tmp,buf);
             tmp[buf_idx] = 0;
 
