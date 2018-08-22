@@ -100,6 +100,7 @@ void checkpipestate(char* path){
 			if(strcmp(arr1, "A!")){showlinkactive();}
 			if(strcmp(arr1, "P!")){showPitchAxisUp();}
 			if(strcmp(arr1, "r!")){showRollAxisUp();}
+			if(strcmp(arr1, "e!")){setlinkenabled(1);}
 	}
 	close(fd);
 }
