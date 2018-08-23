@@ -20,6 +20,11 @@
 #define DEBOUNCE 10000
 #define ACTIVATERST 50000
 
+static char * LINKACTIVETOKEN = "A!";
+static char * ROLLACTIVETOKEN = "P!";
+static char * PITCHACTIVETOKEN = "r!";
+static char * ENABLEDTOKEN = "e!";
+
 int linkenableddown = 0;
 int resetdown = 0;
 int activatetime = 0;
@@ -97,10 +102,10 @@ void checkpipestate(char* path){
 			// Print the read message
 			printf("Read: %s\n", arr1);
 
-			if(strcmp(arr1, "A!")){showlinkactive();}
-			if(strcmp(arr1, "P!")){showPitchAxisUp();}
-			if(strcmp(arr1, "r!")){showRollAxisUp();}
-			if(strcmp(arr1, "e!")){setlinkenabled(1);}
+			if(strcmp(arr1, LINKACTIVETOKEN)){showlinkactive();}
+			if(strcmp(arr1, PITCHACTIVETOKEN)){showPitchAxisUp();}
+			if(strcmp(arr1, ROLLACTIVETOKEN)){showRollAxisUp();}
+			if(strcmp(arr1, ENABLEDTOKEN)){setlinkenabled(1);}
 	}
 	close(fd);
 }
