@@ -129,13 +129,15 @@ int main(void) {
 		pinMode(LinkEnSwPin, INPUT);
 
 		// Make sure leds are good.
-		for(int i = 0; i < sizeof(activeoutput); i++){
-			pinMode(activeoutput[i], OUTPUT);
+		for(int v = 0; v < 3; v++){
+			for(int i = 0; i < sizeof(activeoutput); i++){
+				pinMode(activeoutput[i], OUTPUT);
 
-			digitalWrite(activeoutput[i], HIGH);   //led on
-			delay(100);                 // wait 1 sec
-			digitalWrite(activeoutput[i], LOW);  //led off
-			delay(100);
+				digitalWrite(activeoutput[i], HIGH);   //led on
+				delay(100);                 // wait 1 sec
+				digitalWrite(activeoutput[i], LOW);  //led off
+				delay(100);
+			}
 		}
 		printf("CYCLED \n");
 		int buttondebounce = 0;
