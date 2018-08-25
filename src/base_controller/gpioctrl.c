@@ -20,6 +20,7 @@
 #define DEBOUNCE 10000
 #define ACTIVATERST 50000
 
+
 static char * LINKACTIVETOKEN = "A!";
 static char * ROLLACTIVETOKEN = "P!";
 static char * PITCHACTIVETOKEN = "r!";
@@ -67,16 +68,19 @@ void togglelinkenabled(void){
 //For these, we set them on, and every time we get an active signal, we 'bump' the active time
 //To keep the LED on. The main loop decrements these counts and when they're zero, the active led goes byebye
 void showlinkactive(void){
+	printf("SHOW LINK ACT \n");
 	digitalWrite(LinkActPin, 1);
 	activatetime = ACTIVATERST;
 }
 
 void showRollAxisUp(void){
+	printf("SHOW AXIS UP \n");
 	digitalWrite(RollPin, 1);
 	rollcommtime = ACTIVATERST;
 }
 
 void showPitchAxisUp(void){
+	printf("SHOW PITCH UP \n");
 	digitalWrite(PitchPin, 1);
 	pitchcommtime = ACTIVATERST;
 }
@@ -91,8 +95,7 @@ void activatereset(void){
 void checkpipestate(char* path){
 	char arr1[2];
 	// Incoming commands are 2 bytes
-	// Open FIFO for Read only
-	int fd = open(path, O_RDONLY|O_NONBLOCK);
+	int fd = open(path, O_RDWR|O_NONBLOCK);
 
 	// Read from FIFO
 	int res = read(fd, arr1, sizeof(arr1));
@@ -102,15 +105,16 @@ void checkpipestate(char* path){
 			// Print the read message
 			printf("Read: %s\n", arr1);
 
-			if(strcmp(arr1, LINKACTIVETOKEN)){showlinkactive();}
-			if(strcmp(arr1, PITCHACTIVETOKEN)){showPitchAxisUp();}
-			if(strcmp(arr1, ROLLACTIVETOKEN)){showRollAxisUp();}
-			if(strcmp(arr1, ENABLEDTOKEN)){setlinkenabled(1);}
+			if(strcmp(arr1, LINKACTIVETOKEN) == 0){showlinkactive();}
+			if(strcmp(arr1, PITCHACTIVETOKEN) == 0){showPitchAxisUp();}
+			if(strcmp(arr1, ROLLACTIVETOKEN) == 0){showRollAxisUp();}
+			if(strcmp(arr1, ENABLEDTOKEN) == 0){setlinkenabled(1);}
 	}
-	close(fd);
+	//close(fd);
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
+
 		if(wiringPiSetup() == -1) { //when initialize wiringPi failed, print message to screen
 			printf("setup wiringPi failed !\n");
 			return -1;
@@ -130,16 +134,16 @@ int main(void) {
 
 		// Make sure leds are good.
 		for(int v = 0; v < 3; v++){
-			for(int i = 0; i < sizeof(activeoutput); i++){
+			for(int i = 0; i < 4; i++){
 				pinMode(activeoutput[i], OUTPUT);
 
 				digitalWrite(activeoutput[i], HIGH);   //led on
-				delay(100);                 // wait 1 sec
+				delay(50);                 // wait 1 sec
 				digitalWrite(activeoutput[i], LOW);  //led off
-				delay(100);
+				delay(50);
 			}
 		}
-		printf("CYCLED \n");
+		printf("STARTING WHILE LOOPY \n");
 		int buttondebounce = 0;
 
 		while(1) {
