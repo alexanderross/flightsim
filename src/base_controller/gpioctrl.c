@@ -114,12 +114,12 @@ void checkipcstate(){
     fscanf(file, "%d", &inint);
     printf("READ '%d' \n", inint);
 
-    printf("LINK ACTIVE IS %d \n" LINKACTIVEMASK % inint);
+    printf("LINK ACTIVE IS %d \n", LINKACTIVEMASK % inint);
 
-    if(inint & LINKACTIVEMASK > 0){showlinkactive();};
-    if(inint & PITCHACTIVEMASK > 0){showPitchAxisUp();}
-    if(inint & ROLLACTIVEMASK > 0){showRollAxisUp();}
-    if(inint & ENABLEDMASK > 0){setlinkenabled(1);}
+    if((inint & LINKACTIVEMASK) > 0){showlinkactive();};
+    if((inint & PITCHACTIVEMASK) > 0){showPitchAxisUp();}
+    if((inint & ROLLACTIVEMASK) > 0){showRollAxisUp();}
+    if((inint & ENABLEDMASK) > 0){setlinkenabled(1);}
 
     if(file != NULL){
       fclose(file);
