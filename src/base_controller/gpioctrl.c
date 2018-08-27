@@ -22,10 +22,10 @@
 #define ACTIVATERST 50000
 
 
-static uint8_t LINKACTIVEMASK = 0x80; //_0000000
-static uint8_t ROLLACTIVEMASK = 0x40; //0_000000
-static uint8_t PITCHACTIVEMASK = 0x20;//00_00000
-static uint8_t ENABLEDMASK = 0x10;    //000_0000
+static uint8_t LINKACTIVEMASK = 0x80; //10000000 128
+static uint8_t ROLLACTIVEMASK = 0x40; //01000000 64
+static uint8_t PITCHACTIVEMASK = 0x20;//00100000 32
+static uint8_t ENABLEDMASK = 0x10;    //00010000 16
 static uint8_t SERENABLEMASK = 0x80;
 static uint8_t SERDISABLEMASK = 0x60;
 static uint8_t SERRESETMASK = 0x40;
@@ -43,19 +43,15 @@ char * panelcfpath = "/tmp/panelpath";
 char * sercfpath = "/tmp/serpath";
 
 void writetoserial(uint8_t mask){
-	FILE *file;
-	file = fopen(sercfpath,"r+");
+	FILE *serfile;
+	serfile = fopen(sercfpath,"w+");
 
-	if(file == NULL){ 
-		return;
-	}else{
-    uint8_t inint;
-    fscanf(file, "%d", inint);
-    inint = inint | mask;
-    rewind(file);
-    fprintf(file, "%d", inint);
-    fclose(file);
-	}
+  uint8_t inint;
+  fscanf(serfile, "%d", inint);
+  inint = inint | mask;
+  rewind(serfile);
+  fprintf(serfile, "%d", inint);
+  fclose(serfile);
 
 }
 
@@ -86,13 +82,13 @@ void showlinkactive(void){
 }
 
 void showRollAxisUp(void){
-	printf("SHOW AXIS UP \n");
+	printf("SHOW ROLL AXIS UP \n");
 	digitalWrite(RollPin, 1);
 	rollcommtime = ACTIVATERST;
 }
 
 void showPitchAxisUp(void){
-	printf("SHOW PITCH UP \n");
+	printf("SHOW PITCH AXIS UP \n");
 	digitalWrite(PitchPin, 1);
 	pitchcommtime = ACTIVATERST;
 }
@@ -114,6 +110,7 @@ void checkipcstate(){
 	}else{
     uint8_t inint;
     fscanf(file, "%d", &inint);
+    printf("READ %d \n");
 
     if(inint & LINKACTIVEMASK > 0){showlinkactive();};
     if(inint & PITCHACTIVEMASK > 0){showPitchAxisUp();}
