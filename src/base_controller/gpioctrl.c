@@ -103,7 +103,7 @@ void activatereset(void){
 	writetofifo(serpathfifo, "R!");
 }
 
-void checkipcstate(char* path){
+void checkipcstate(){
 	FILE *file;
 	file = fopen(panelcfpath, "r");
 
