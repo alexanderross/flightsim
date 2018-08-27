@@ -46,7 +46,7 @@ void writetoserial(uint8_t mask){
 	FILE *serfile;
 	serfile = fopen(sercfpath,"w+");
 
-	printf("WRITING %d to serial", mask);
+	printf("WRITING %d to serial \n", mask);
 
   uint8_t inint;
   fscanf(serfile, "%d", inint);
@@ -103,7 +103,7 @@ void activatereset(void){
 }
 
 void checkipcstate(){
-	FILE *file;
+	FILE* file;
 	file = fopen(panelcfpath, "r");
 
 	if(file == NULL){
@@ -112,7 +112,7 @@ void checkipcstate(){
 	}else{
     uint8_t inint;
     fscanf(file, "%d", &inint);
-    printf("READ %d \n");
+    printf("READ '%d' \n");
 
     if(inint & LINKACTIVEMASK > 0){showlinkactive();};
     if(inint & PITCHACTIVEMASK > 0){showPitchAxisUp();}
