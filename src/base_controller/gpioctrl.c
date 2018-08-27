@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
 		int buttondebounce = 0;
 
 		while(1) {
-			checkmqstate(panelpathfifo);
+			checkipcstate();
 
 			int resetvalue = digitalRead(ResetSwPin);
 			int enablevalue = digitalRead(LinkEnSwPin);
