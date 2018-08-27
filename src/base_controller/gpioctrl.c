@@ -49,9 +49,9 @@ void writetoserial(uint8_t mask){
 		return;
 	}else{
     uint8_t inint;
-    fread(file, "%d", inint);
+    fscanf(file, "%d", inint);
     inint = inint | mask;
-    fseek(file, 0);
+    rewind(file);
     fprintf(file, "%d", inint);
     fclose(f);
 	}
