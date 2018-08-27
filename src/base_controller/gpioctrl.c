@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <mqueue.h>
 
 #define PitchPin 4
 #define RollPin 5
@@ -19,6 +20,8 @@
 #define LinkEnSwPin 0
 #define DEBOUNCE 10000
 #define ACTIVATERST 50000
+
+#define MAX_MSG_SIZE 4
 
 
 static char * LINKACTIVETOKEN = "A!";
@@ -35,18 +38,29 @@ int rollcommtime = 0;
 int linkenabled = 0;
 int buttondebounce = 0;
 
-char * panelpathfifo = "/tmp/panelfifo";
-char * serpathfifo = "/tmp/serpathfifo";
+char * panelpathmq = "/panelmq";
+char * serpathmq = "/serpathmq";
 
-void writetofifo(char* path, char* msg){
-  char arrrg[80];
-  // Open FIFO for write only
-  int fd = open(path, O_WRONLY|O_NONBLOCK);
+void writetomq(char* path, char* msg){
+  mqd_t mq = mq_open(path, O_WRONLY);
 
-  // Write the input arr2ing on FIFO
-  // and close it
-  write(fd, msg, strlen(msg)+1);
+  mq_send(mq, msg, MAX_SIZE, 0));
   close(fd);
+}
+
+mqd_t getpanelmq(void){
+  struct mq_attr attr;
+  char buffer[MAX_SIZE + 1];
+  int must_stop = 0;
+
+  /* initialize the queue attributes */
+  attr.mq_flags = 0;
+  attr.mq_maxmsg = 25;
+  attr.mq_msgsize = MAX_MSG_SIZE;
+  attr.mq_curmsgs = 0;
+
+  /* create the message queue */
+  return mq_open(panelpathmq, O_CREAT | O_RDONLY, 0644, &attr);
 }
 
 void setlinkenabled(int state){
@@ -55,7 +69,7 @@ void setlinkenabled(int state){
 
 	char enabledmsg[3] = {'D','!'};
 	if(linkenabled){ enabledmsg[0] = 'E';}
-	writetofifo(serpathfifo, enabledmsg);
+	writetomq(serpathfifo, enabledmsg);
 }
 
 void togglelinkenabled(void){
@@ -92,25 +106,30 @@ void activatereset(void){
 	writetofifo(serpathfifo, "R!");
 }
 
-void checkpipestate(char* path){
-	char arr1[2];
+void checkmqtate(char* path){
+	char buffer[MAX_MSG_SIZE];
 	// Incoming commands are 2 bytes
-	int fd = open(path, O_RDWR|O_NONBLOCK);
+	mqd_t mq = getpanelmq();
 
-	// Read from FIFO
-	int res = read(fd, arr1, sizeof(arr1));
-	if(res > 0){
-			//Check for reset (reset sets enabled to false) else
-			//Check for enabled signal
-			// Print the read message
-			printf("Read: %s\n", arr1);
+	// Read from mq while we have stuff
+	while(1){
+		ssize_t bytes_read = mq_receive(mq, buffer, MAX_MSG_SIZE, NULL);
 
-			if(strcmp(arr1, LINKACTIVETOKEN) == 0){showlinkactive();}
-			if(strcmp(arr1, PITCHACTIVETOKEN) == 0){showPitchAxisUp();}
-			if(strcmp(arr1, ROLLACTIVETOKEN) == 0){showRollAxisUp();}
-			if(strcmp(arr1, ENABLEDTOKEN) == 0){setlinkenabled(1);}
+		if(bytes_read > 0){
+				//Check for reset (reset sets enabled to false) else
+				//Check for enabled signal
+				// Print the read message
+				printf("Read: %s\n", buffer);
+
+				if(strcmp(buffer, LINKACTIVETOKEN) == 0){showlinkactive();}
+				if(strcmp(buffer, PITCHACTIVETOKEN) == 0){showPitchAxisUp();}
+				if(strcmp(buffer, ROLLACTIVETOKEN) == 0){showRollAxisUp();}
+				if(strcmp(buffer, ENABLEDTOKEN) == 0){setlinkenabled(1);}
+		}else{
+			break;
+		}
 	}
-	//close(fd);
+	mq_close(mq);
 }
 
 int main(int argc, char *argv[]) {
@@ -119,15 +138,8 @@ int main(int argc, char *argv[]) {
 			printf("setup wiringPi failed !\n");
 			return -1;
 		}
-		
-		// Creating the named file(FIFO)
-		// mkfifo(<pathname>, <permission>)
-		mkfifo(panelpathfifo, 0666);
-		mkfifo(serpathfifo, 0666);
-
 
 		int activeoutput[4] = {PitchPin, RollPin, LinkEnPin, LinkActPin};
-
 
 		pinMode(ResetSwPin, INPUT);
 		pinMode(LinkEnSwPin, INPUT);
@@ -147,7 +159,7 @@ int main(int argc, char *argv[]) {
 		int buttondebounce = 0;
 
 		while(1) {
-			checkpipestate(panelpathfifo);
+			checkmqstate(panelpathfifo);
 
 			int resetvalue = digitalRead(ResetSwPin);
 			int enablevalue = digitalRead(LinkEnSwPin);
