@@ -28,6 +28,7 @@ static uint8_t PITCHACTIVEMASK = 0x20;//00_00000
 static uint8_t ENABLEDMASK = 0x10;    //000_0000
 static uint8_t SERENABLEMASK = 0x80;
 static uint8_t SERDISABLEMASK = 0x60;
+static uint8_t SERRESETMASK = 0x40;
 
 int linkenableddown = 0;
 int resetdown = 0;
@@ -43,7 +44,7 @@ char * sercfpath = "/tmp/serpath";
 
 void writetoserial(uint8_t mask){
 	FILE *file;
-	file = fopen(sercfpath,'r+');
+	file = fopen(sercfpath,"r+");
 
 	if(file == NULL){ 
 		return;
@@ -53,7 +54,7 @@ void writetoserial(uint8_t mask){
     inint = inint | mask;
     rewind(file);
     fprintf(file, "%d", inint);
-    fclose(f);
+    fclose(file);
 	}
 
 }
@@ -100,7 +101,7 @@ void activatereset(void){
 	//Send reset signal
 	setlinkenabled(0);
 	printf("ACTIVATE RESET \n");
-	writetofifo(serpathfifo, "R!");
+	writetoserial(SERRESETMASK);
 }
 
 void checkipcstate(){
