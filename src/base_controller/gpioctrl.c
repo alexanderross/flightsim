@@ -21,13 +21,13 @@
 #define DEBOUNCE 10000
 #define ACTIVATERST 50000
 
-#define MAX_MSG_SIZE 4
 
-
-static char * LINKACTIVETOKEN = "A!";
-static char * ROLLACTIVETOKEN = "P!";
-static char * PITCHACTIVETOKEN = "r!";
-static char * ENABLEDTOKEN = "e!";
+static uint8_t LINKACTIVEMASK = 0x80; //_0000000
+static uint8_t ROLLACTIVEMASK = 0x40; //0_000000
+static uint8_t PITCHACTIVEMASK = 0x20;//00_00000
+static uint8_t ENABLEDMASK = 0x10;    //000_0000
+static uint8_t SERENABLEMASK = 0x80;
+static uint8_t SERDISABLEMASK = 0x60;
 
 int linkenableddown = 0;
 int resetdown = 0;
@@ -38,38 +38,35 @@ int rollcommtime = 0;
 int linkenabled = 0;
 int buttondebounce = 0;
 
-char * panelpathmq = "/panelmq";
-char * serpathmq = "/serpathmq";
+char * panelcfpath = "/tmp/panelpath";
+char * sercfpath = "/tmp/serpath";
 
-void writetomq(char* path, char* msg){
-  mqd_t mq = mq_open(path, O_WRONLY);
+void writetoserial(uint8_t mask){
+	FILE *file;
+	file = fopen(sercfpath,'r+');
 
-  mq_send(mq, msg, MAX_SIZE, 0));
-  close(fd);
-}
+	if(file == NULL){ 
+		return;
+	}else{
+    uint8_t inint;
+    fread(file, "%d", inint);
+    inint = inint | mask;
+    fseek(file, 0);
+    fprintf(file, "%d", inint);
+    fclose(f);
+	}
 
-mqd_t getpanelmq(void){
-  struct mq_attr attr;
-  char buffer[MAX_SIZE + 1];
-  int must_stop = 0;
-
-  /* initialize the queue attributes */
-  attr.mq_flags = 0;
-  attr.mq_maxmsg = 25;
-  attr.mq_msgsize = MAX_MSG_SIZE;
-  attr.mq_curmsgs = 0;
-
-  /* create the message queue */
-  return mq_open(panelpathmq, O_CREAT | O_RDONLY, 0644, &attr);
 }
 
 void setlinkenabled(int state){
 	digitalWrite(LinkEnPin, state);
 	linkenabled = state;
 
-	char enabledmsg[3] = {'D','!'};
-	if(linkenabled){ enabledmsg[0] = 'E';}
-	writetomq(serpathfifo, enabledmsg);
+	if(linkenabled){ 
+		writetoserial(SERENABLEMASK);
+	}else{
+		writetoserial(SERDISABLEMASK);
+	}
 }
 
 void togglelinkenabled(void){
@@ -106,30 +103,25 @@ void activatereset(void){
 	writetofifo(serpathfifo, "R!");
 }
 
-void checkmqtate(char* path){
-	char buffer[MAX_MSG_SIZE];
-	// Incoming commands are 2 bytes
-	mqd_t mq = getpanelmq();
+void checkipcstate(char* path){
+	FILE *file;
+	file = fopen(panelcfpath, "r");
 
-	// Read from mq while we have stuff
-	while(1){
-		ssize_t bytes_read = mq_receive(mq, buffer, MAX_MSG_SIZE, NULL);
+	if(file == NULL){
+		//Nothin new
+		return;
+	}else{
+    uint8_t inint;
+    fscanf(file, "%d", &inint);
 
-		if(bytes_read > 0){
-				//Check for reset (reset sets enabled to false) else
-				//Check for enabled signal
-				// Print the read message
-				printf("Read: %s\n", buffer);
+    if(inint & LINKACTIVEMASK > 0){showlinkactive();};
+    if(inint & PITCHACTIVEMASK > 0){showPitchAxisUp();}
+    if(inint & ROLLACTIVEMASK > 0){showRollAxisUp();}
+    if(inint & ENABLEDMASK > 0){setlinkenabled(1);}
 
-				if(strcmp(buffer, LINKACTIVETOKEN) == 0){showlinkactive();}
-				if(strcmp(buffer, PITCHACTIVETOKEN) == 0){showPitchAxisUp();}
-				if(strcmp(buffer, ROLLACTIVETOKEN) == 0){showRollAxisUp();}
-				if(strcmp(buffer, ENABLEDTOKEN) == 0){setlinkenabled(1);}
-		}else{
-			break;
-		}
+    fclose(file);
+    remove(panelcfpath);
 	}
-	mq_close(mq);
 }
 
 int main(int argc, char *argv[]) {
