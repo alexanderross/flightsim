@@ -53,7 +53,7 @@ void writetoserial(uint8_t mask){
   inint = inint | mask;
   rewind(serfile);
   fprintf(serfile, "%d", inint);
-  fclose(serfile);
+  if(file != NULL){ fclose(serfile); }
 
 }
 
