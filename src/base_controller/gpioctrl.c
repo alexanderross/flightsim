@@ -112,14 +112,18 @@ void checkipcstate(){
 	}else{
     uint8_t inint;
     fscanf(file, "%d", &inint);
-    printf("READ '%d' \n");
+    printf("READ '%d' \n", inint);
+
+    printf("LINK ACTIVE IS %d \n" LINKACTIVEMASK % inint);
 
     if(inint & LINKACTIVEMASK > 0){showlinkactive();};
     if(inint & PITCHACTIVEMASK > 0){showPitchAxisUp();}
     if(inint & ROLLACTIVEMASK > 0){showRollAxisUp();}
     if(inint & ENABLEDMASK > 0){setlinkenabled(1);}
 
-    fclose(file);
+    if(file != NULL){
+      fclose(file);
+    }
     remove(panelcfpath);
 	}
 }
