@@ -26,6 +26,7 @@ static uint8_t LINKACTIVEMASK = 0x80; //10000000 128
 static uint8_t ROLLACTIVEMASK = 0x40; //01000000 64
 static uint8_t PITCHACTIVEMASK = 0x20;//00100000 32
 static uint8_t ENABLEDMASK = 0x10;    //00010000 16
+static uint8_t DISABLEDMASK = 0x08;    //00001000 8
 static uint8_t SERENABLEMASK = 0x80;
 static uint8_t SERDISABLEMASK = 0x60;
 static uint8_t SERRESETMASK = 0x40;
@@ -120,6 +121,7 @@ void checkipcstate(){
     if((inint & PITCHACTIVEMASK) > 0){showPitchAxisUp();}
     if((inint & ROLLACTIVEMASK) > 0){showRollAxisUp();}
     if((inint & ENABLEDMASK) > 0){setlinkenabled(1);}
+    if((inint & DISABLEDMASK) > 0){setlinkenabled(1);}
 
     if(file != NULL){
       fclose(file);
