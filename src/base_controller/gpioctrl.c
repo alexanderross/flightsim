@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <mqueue.h>
+#include <stdint.h>
 
 #define PitchPin 4
 #define RollPin 5
