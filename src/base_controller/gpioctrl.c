@@ -46,6 +46,8 @@ void writetoserial(uint8_t mask){
 	FILE *serfile;
 	serfile = fopen(sercfpath,"w+");
 
+	printf("WRITING %d to serial", mask);
+
   uint8_t inint;
   fscanf(serfile, "%d", inint);
   inint = inint | mask;
