@@ -154,7 +154,7 @@ int main()
     int wlen;
 
 
-    printf("STARTING");
+    printf("STARTING \n");
     fd = open(PORTNAME, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fd < 0) {
         printf("Error opening %s: %s\n", PORTNAME, strerror(errno));
@@ -171,6 +171,7 @@ int main()
     }
     tcdrain(fd);    /* delay for output */
 
+    printf("STARTED \n");
     do {
         size_t buf_idx = 0;
         char buf[BUFFERLENGTH] = { 0 };
