@@ -49,6 +49,7 @@ void writetoserial(uint8_t mask){
 
   uint8_t inint;
   fscanf(serfile, "%d", inint);
+  print("FILE CURRENTLY CONTAINS %d", inint);
   inint = inint | mask;
   printf("WRITING %d to serial resulting in final %d \n", mask, inint);
   rewind(serfile);
@@ -80,7 +81,7 @@ void togglelinkenabled(void){
 void showlinkactive(void){
 	printf("SHOW LINK ACT \n");
 	digitalWrite(LinkActPin, 1);
-	activatetime = ACTIVATERST;
+	activatetime = ACTIVATERST*2;
 }
 
 void showRollAxisUp(void){

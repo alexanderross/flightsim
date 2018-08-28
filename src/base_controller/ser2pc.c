@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdint.h>
 
 
 
@@ -17,8 +18,20 @@ const char STOP_CHAR = '>';
 const char START_CHAR = '<';
 const char MSG_DELIM = '!';
 
-_Bool linkenabled = 1;
-_Bool resetrequested = 0;
+int linkenabled = 1;
+int resetrequested = 0;
+
+static char panelcfpath[] = "/tmp/panelpath";
+static char sercfpath[] = "/tmp/serpath";
+static char rfcfpath[] = "/tmp/serpath";
+
+static uint8_t SERENABLEMASK = 0x80;
+static uint8_t SERDISABLEMASK = 0x40;
+static uint8_t SERRESETMASK = 0x20;
+
+static uint8_t PANELLINKACTIVEMASK = 0x80;
+
+static uint16_t RF_RESET_MASK = 0x01;
 
 /* ser2pc
 *  This takes the input from flight sim and translates into common messages to send to the socket that is 
@@ -61,7 +74,7 @@ int set_interface_attribs(int fd, int speed)
     return 0;
 }
 
-_Bool is_reserved_char(char bchar){
+int is_reserved_char(char bchar){
   return (bchar == START_CHAR || bchar == STOP_CHAR || bchar == MSG_DELIM);
 }
 
@@ -81,54 +94,70 @@ void set_mincount(int fd, int mcount)
         printf("Error tcsetattr: %s\n", strerror(errno));
 }
 
-void writetofifo(char* path, char* msg){
-    char arrrg[80];
-    // Open FIFO for write only
-    int fd = open(path, O_WRONLY|O_NONBLOCK);
+void sendtorf(uint8_t mask){
+    FILE *fd = fopen(rfcfpath, "w+");
 
     // Write the input arr2ing on FIFO
     // and close it
-    write(fd, arrrg, strlen(arrrg)+1);
-    close(fd);
+    //write(fd, arrrg, strlen(arrrg)+1);
+    fclose(fd);
 }
 
-_Bool checklinkenabled(char* path){
-    char arr1[80];
-    // Open FIFO for Read only
-    int fd = open(path, O_RDONLY);
+void sendtopanel(uint8_t mask){
+    FILE *fd = fopen(panelcfpath, "w+");
 
-    // Read from FIFO
-    int res = read(fd, arr1, sizeof(arr1));
-    if(res > 0){
-        //Check for reset (reset sets enabled to false) else
-        //Check for enabled signal
-        // Print the read message
-        printf("Read: %s\n", arr1);
+    // Write the input arr2ing on FIFO
+    // and close it
+   fprintf(fd, "%d", mask);
+   fclose(fd);
+}
+
+void sendresetsignal(){
+    linkenabled = 0;
+    resetrequested = 1;
+}
+
+uint8_t coordinate_to_bitmask(char* coord_str){
+  
+}
+
+void checklinkenabled(char* path){
+    FILE* file;
+    file = fopen(sercfpath, "r");
+
+    if(file == NULL){
+        //Nothin new
+        return;
+    }else{
+        uint8_t inint;
+        usleep(20);
+        fscanf(file, "%d", &inint);
+        printf("READ '%d' \n", inint);
+
+        if((inint & SERENABLEMASK) > 0){linkenabled = 1;};
+        if((inint & SERDISABLEMASK) > 0){linkenabled = 0;}
+        if((inint & SERRESETMASK) > 0){sendresetsignal();}
+
+        if(file != NULL){
+          fclose(file);
+        }
+
+        remove(panelcfpath);
     }
-    close(fd);
-    return linkenabled;
 }
 
 
 int main()
 {
 
-    char *portname = PORTNAME;
     int fd;
     int wlen;
 
-    char * panelpathfifo = "/tmp/panelfifo";
-    char * rfpathfifo = "/tmp/rffifo";
- 
-    // Creating the named file(FIFO)
-    // mkfifo(<pathname>, <permission>)
-    mkfifo(panelpathfifo, 0666);
-    mkfifo(rfpathfifo, 0666);
 
     printf("STARTING");
-    fd = open(portname, O_RDWR | O_NOCTTY | O_NDELAY);
+    fd = open(PORTNAME, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fd < 0) {
-        printf("Error opening %s: %s\n", portname, strerror(errno));
+        printf("Error opening %s: %s\n", PORTNAME, strerror(errno));
         return -1;
     }
     /*baudrate 115200, 8 bits, no parity, 1 stop bit (8N1) */
@@ -164,19 +193,17 @@ int main()
             strcpy(tmp,buf);
             tmp[buf_idx] = 0;
 
-            linkenabled = checklinkenabled(panelpathfifo);
-
             if(resetrequested){
                 //send reset command to axes
-                writetofifo(rfpathfifo, "*R!");
+                sendtorf(RF_RESET_MASK);
                 
                 //reset resetrequested flag
                 resetrequested = 0;
             }else if(linkenabled){
               // Send link active to panel
-              writetofifo(panelpathfifo, "A!");
+              sendtopanel(PANELLINKACTIVEMASK);
               // Forward command to 2.4
-              writetofifo(rfpathfifo, tmp);
+              sendtorf(coordinate_to_bitmask(tmp));
             }
             printf("Read %d: \"%s\"\n", buf_idx, tmp);
         } else if (buf_idx < -1) {
