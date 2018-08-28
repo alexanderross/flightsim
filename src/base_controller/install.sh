@@ -15,5 +15,5 @@ install_fs_svc () {
 
 install_fs_svc fs-build
 install_fs_svc fs-panel
-#install_fs_svc fs-ser-comm
+install_fs_svc fs-ser-comm
 #install_fs_svc fs-rf24-comm
