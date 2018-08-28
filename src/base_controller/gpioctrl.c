@@ -47,11 +47,10 @@ void writetoserial(uint8_t mask){
 	FILE *serfile;
 	serfile = fopen(sercfpath,"w+");
 
-	printf("WRITING %d to serial \n", mask);
-
   uint8_t inint;
   fscanf(serfile, "%d", inint);
   inint = inint | mask;
+  printf("WRITING %d to serial resulting in final %d \n", mask, inint);
   rewind(serfile);
   fprintf(serfile, "%d", inint);
   if(serfile != NULL){ fclose(serfile); }
