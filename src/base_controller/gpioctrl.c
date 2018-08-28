@@ -49,7 +49,7 @@ void writetoserial(uint8_t mask){
 
   uint8_t inint;
   fscanf(serfile, "%d", inint);
-  print("FILE CURRENTLY CONTAINS %d", inint);
+  printf("FILE CURRENTLY CONTAINS %d", inint);
   inint = inint | mask;
   printf("WRITING %d to serial resulting in final %d \n", mask, inint);
   rewind(serfile);
