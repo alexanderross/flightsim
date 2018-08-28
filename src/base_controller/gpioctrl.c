@@ -121,7 +121,7 @@ void checkipcstate(){
     if((inint & PITCHACTIVEMASK) > 0){showPitchAxisUp();}
     if((inint & ROLLACTIVEMASK) > 0){showRollAxisUp();}
     if((inint & ENABLEDMASK) > 0){setlinkenabled(1);}
-    if((inint & DISABLEDMASK) > 0){setlinkenabled(1);}
+    if((inint & DISABLEDMASK) > 0){setlinkenabled(0);}
 
     if(file != NULL){
       fclose(file);
