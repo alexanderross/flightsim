@@ -18,7 +18,7 @@
 
 #define ResetSwPin 2
 #define LinkEnSwPin 0
-#define DEBOUNCE 10000
+#define DEBOUNCE 40000
 #define ACTIVATERST 50000
 
 
@@ -28,8 +28,8 @@ static uint8_t PITCHACTIVEMASK = 0x20;//00100000 32
 static uint8_t ENABLEDMASK = 0x10;    //00010000 16
 static uint8_t DISABLEDMASK = 0x08;    //00001000 8
 static uint8_t SERENABLEMASK = 0x80;
-static uint8_t SERDISABLEMASK = 0x60;
-static uint8_t SERRESETMASK = 0x40;
+static uint8_t SERDISABLEMASK = 0x40;
+static uint8_t SERRESETMASK = 0x20;
 
 int linkenableddown = 0;
 int resetdown = 0;
@@ -112,6 +112,7 @@ void checkipcstate(){
 		return;
 	}else{
     uint8_t inint;
+    usleep(20);
     fscanf(file, "%d", &inint);
     printf("READ '%d' \n", inint);
 
