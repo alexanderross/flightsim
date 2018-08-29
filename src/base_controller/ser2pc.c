@@ -224,6 +224,13 @@ int main()
             if (buf_idx > 0 && is_reserved_char(buf[buf_idx - 1])){
                 break;
             }
+            
+            if(encheckbuff <= 0){
+                checklinkenabled();
+                encheckbuff = CHECK_INTERVAL_CYCLES;
+            }else{
+                encheckbuff--;
+            }
         }  
 
         if (buf_idx > 0) {
