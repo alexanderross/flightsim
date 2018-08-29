@@ -37,24 +37,32 @@ int activatetime = 0;
 int pitchcommtime = 0;
 int rollcommtime = 0;
 
+uint8_t serwritetmp = 0;
+
 int linkenabled = 0;
 int buttondebounce = 0;
 
 char * panelcfpath = "/tmp/panelpath";
 char * sercfpath = "/tmp/serpath";
 
-void writetoserial(uint8_t mask){
+void queueforserialwrite(uint8_t mask){
+	serwritetmp = serwritetmp | mask;
+}
+
+void committoserial(){
 	FILE *serfile;
 	serfile = fopen(sercfpath,"w+");
 
   uint8_t inint;
   fscanf(serfile, "%d", inint);
   printf("FILE CURRENTLY CONTAINS %d", inint);
-  inint = inint | mask;
+  inint = inint | serwritetmp;
   printf("WRITING %d to serial resulting in final %d \n", mask, inint);
   rewind(serfile);
   fprintf(serfile, "%d", inint);
   if(serfile != NULL){ fclose(serfile); }
+
+  serwritetmp = 0;
 
 }
 
@@ -63,9 +71,9 @@ void setlinkenabled(int state){
 	linkenabled = state;
 
 	if(linkenabled){ 
-		writetoserial(SERENABLEMASK);
+		queueforserialwrite(SERENABLEMASK);
 	}else{
-		writetoserial(SERDISABLEMASK);
+		queueforserialwrite(SERDISABLEMASK);
 	}
 }
 
@@ -100,7 +108,7 @@ void activatereset(void){
 	//Send reset signal
 	setlinkenabled(0);
 	printf("ACTIVATE RESET \n");
-	writetoserial(SERRESETMASK);
+	queueforserialwrite(SERRESETMASK);
 }
 
 void checkipcstate(){
@@ -159,6 +167,10 @@ int main(int argc, char *argv[]) {
 
 		while(1) {
 			checkipcstate();
+
+			if(serwritetmp > 0){
+				committoserial();
+			}
 
 			int resetvalue = digitalRead(ResetSwPin);
 			int enablevalue = digitalRead(LinkEnSwPin);
