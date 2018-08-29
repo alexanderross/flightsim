@@ -146,7 +146,7 @@ void process_command(char* coord_str){
         if(coord_str[swag] == START_CHAR){
             current_buf = xbuf;
         }else if(coord_str[swag] == STOP_CHAR){
-            printf("COORD READ X(%d) - Y(%d)", atoi(xbuf), atoi(ybuf));
+            printf("COORD READ X(%d) - Y(%d)\n", atoi(xbuf), atoi(ybuf));
             sendcoordstorf(atoi(xbuf), atoi(ybuf));
             buf_position = 0;
         }else if(coord_str[swag] == COORD_SEPARATOR){
@@ -224,7 +224,7 @@ int main()
             if (buf_idx > 0 && is_reserved_char(buf[buf_idx - 1])){
                 break;
             }
-            
+
             if(encheckbuff <= 0){
                 checklinkenabled();
                 encheckbuff = CHECK_INTERVAL_CYCLES;
