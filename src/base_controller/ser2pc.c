@@ -21,10 +21,13 @@ const char COORD_SEPARATOR = '|';
 
 int linkenabled = 1;
 int resetrequested = 0;
+int encheckbuff = 0;
 
 static char panelcfpath[] = "/tmp/panelpath";
 static char sercfpath[] = "/tmp/serpath";
-static char rfcfpath[] = "/tmp/serpath";
+static char rfcfpath[] = "/tmp/rfpath";
+
+static int CHECK_INTERVAL_CYCLES = 1000;
 
 static uint8_t SERENABLEMASK = 0x80;
 static uint8_t SERDISABLEMASK = 0x40;
@@ -155,7 +158,7 @@ void process_command(char* coord_str){
     }
 }
 
-void checklinkenabled(char* path){
+void checklinkenabled(){
     FILE* file;
     file = fopen(sercfpath, "r");
 
@@ -237,6 +240,12 @@ int main()
             printf("Read %d: \"%s\"\n", buf_idx, tmp);
         } else if (buf_idx < -1) {
           //This will happen so let's juuuuuust ignore it.
-        }  
+        }
+        if(encheckbuff <= 0){
+            checklinkenabled();
+            encheckbuff = CHECK_INTERVAL_CYCLES;
+        }else{
+            encheckbuff--;
+        }
     } while (1);
 }
