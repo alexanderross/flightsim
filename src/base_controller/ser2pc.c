@@ -179,7 +179,7 @@ void checklinkenabled(){
           fclose(file);
         }
 
-        remove(panelcfpath);
+        remove(sercfpath);
     }
 }
 
