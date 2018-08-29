@@ -17,6 +17,7 @@
 const char STOP_CHAR = '>';
 const char START_CHAR = '<';
 const char MSG_DELIM = '!';
+const char COORD_SEPARATOR = '|';
 
 int linkenabled = 1;
 int resetrequested = 0;
@@ -31,7 +32,7 @@ static uint8_t SERRESETMASK = 0x20;
 
 static uint8_t PANELLINKACTIVEMASK = 0x80;
 
-static uint16_t RF_RESET_MASK = 0x01;
+static uint32_t RF_RESET_MASK = 0x01;
 
 /* ser2pc
 *  This takes the input from flight sim and translates into common messages to send to the socket that is 
@@ -115,10 +116,43 @@ void sendtopanel(uint8_t mask){
 void sendresetsignal(){
     linkenabled = 0;
     resetrequested = 1;
+
+    sendtorf(SERRESETMASK);    
 }
 
-uint8_t coordinate_to_bitmask(char* coord_str){
-  
+void sendcoordstorf(int xcoord, int ycoord){
+
+}
+
+void process_command(char* coord_str){
+    //So we're going to reserve 9-bit slots for the coordinate system. 
+    // 0-8 is X 9-17 is Y (stores position value of 0-359 representing desired position)
+    // 31 (0x100) is an indicator bit representing if a reset signal should be sent. (returns RF components to mechanical 0 positions)
+
+    // the commands come in like '<xaxis|yaxis>' This method needs to parse these, convert into integers, then creates a mask by shifting the y coord 9 bits.
+
+    // reset requested is permanently written into this mask and the comm file being removed is the indication to return that value to 0. (RF will remove the file once it acks the reset).
+    // As a reset disables the link, this shouldn't be the primary means of reset (sendresetsignal does it explicitly), but it's a failsafe.
+    int x_coord, y_coord;
+    int buf_position = 0;
+    char xbuf[3], ybuf[3];
+
+    char *current_buf;  
+
+    for(int swag = 0 ; swag < sizeof(coord_str); swag++){
+        if(coord_str[swag] == START_CHAR){
+            current_buf = xbuf;
+        }else if(coord_str[swag] == STOP_CHAR){
+            printf("COORD READ X(%d) - Y(%d)", atoi(xbuf), atoi(ybuf));
+            sendcoordstorf(atoi(xbuf), atoi(ybuf));
+            buf_position = 0;
+        }else if(coord_str[swag] == COORD_SEPARATOR){
+            current_buf = ybuf;
+        }else{
+            *(current_buf + buf_position) = coord_str[swag];
+            buf_position++;
+        }
+    }
 }
 
 void checklinkenabled(char* path){
@@ -194,17 +228,11 @@ int main()
             strcpy(tmp,buf);
             tmp[buf_idx] = 0;
 
-            if(resetrequested){
-                //send reset command to axes
-                sendtorf(RF_RESET_MASK);
-                
-                //reset resetrequested flag
-                resetrequested = 0;
-            }else if(linkenabled){
+            if(linkenabled){
               // Send link active to panel
               sendtopanel(PANELLINKACTIVEMASK);
               // Forward command to 2.4
-              sendtorf(coordinate_to_bitmask(tmp));
+              process_command(tmp);
             }
             printf("Read %d: \"%s\"\n", buf_idx, tmp);
         } else if (buf_idx < -1) {
