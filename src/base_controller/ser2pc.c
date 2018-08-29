@@ -117,6 +117,7 @@ void sendtopanel(uint8_t mask){
 }
 
 void sendresetsignal(){
+    printf("PROCESSED RESET\n");
     linkenabled = 0;
     resetrequested = 1;
 
