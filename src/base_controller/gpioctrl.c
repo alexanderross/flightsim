@@ -47,6 +47,7 @@ char * sercfpath = "/tmp/serpath";
 
 void queueforserialwrite(uint8_t mask){
 	serwritetmp = serwritetmp | mask;
+	printf("Queued write for %d, results in %d\n",mask, serwritetmp);
 }
 
 void committoserial(){
@@ -57,7 +58,7 @@ void committoserial(){
   fscanf(serfile, "%d", inint);
   printf("FILE CURRENTLY CONTAINS %d", inint);
   inint = inint | serwritetmp;
-  printf("WRITING %d to serial resulting in final %d \n", mask, inint);
+  printf("WRITING %d to serial resulting in final %d \n", serwritetmp, inint);
   rewind(serfile);
   fprintf(serfile, "%d", inint);
   if(serfile != NULL){ fclose(serfile); }
