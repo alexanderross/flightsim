@@ -35,7 +35,7 @@ static uint8_t SERRESETMASK = 0x20;
 
 static uint8_t PANELLINKACTIVEMASK = 0x80;
 
-static uint32_t RF_RESET_MASK = 0x01;
+static int RF_RESET_SHIFT= 18;
 
 /* ser2pc
 *  This takes the input from flight sim and translates into common messages to send to the socket that is 
@@ -125,7 +125,11 @@ void sendresetsignal(){
 }
 
 void sendcoordstorf(int xcoord, int ycoord){
+    uint32_t masky = 0;
 
+    masky = masky | xcoord | (ycoord << 9) | (resetrequested << RF_RESET_SHIFT);
+
+    sendtorf(masky);
 }
 
 void process_command(char* coord_str){
