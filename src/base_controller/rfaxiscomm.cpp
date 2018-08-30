@@ -61,25 +61,45 @@ RF24 radio(RPI_V2_GPIO_P1_15, RPI_V2_GPIO_P1_24, BCM2835_SPI_SPEED_8MHZ);
 
 /**************************************************************/
 
-// Radio pipe addresses for the 2 nodes to communicate.
-const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
+// Radio pipe addresses comms - W, R. 
+const uint64_t xpipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
+const uint64_t ypipes[2] = { 0xF0F0F0F0C3LL, 0xF0F0F0F0B4LL };
 
 
 
-const int min_payload_size = 4;
-const int max_payload_size = 32;
-const int payload_size_increments_by = 1;
-int next_payload_size = min_payload_size;
+const int write_payload_size = 4;
+const int read_payload_size = 4;
 
-char receive_payload[max_payload_size + 1]; // +1 to allow room for a terminating NULL char
+char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating NULL char
+
+void writetoaxis(int axis, uint16_t position){
+  uint64_t currentwriteypipe = xpipes[0];
+
+  radio.stopListening(); //Like what my girlfriend did when I made the grave one-time mistake of saying 'calm down'
+  
+  if(axis == 1){ currentwriteypipe = ypipes[0];}
+  
+  radio.openWritingPipe(currentwriteypipe);
+
+  radio.write(position, write_payload_size);
+
+  radio.startListening();
+
+}
+
+//Maybe axes this to use one read pipe and have each axes figure out what to get. 
+void writetoxaxis(uint16_t position){
+  writetoaxis(0, position);
+}
+
+void writetoyaxis(uint16_t position){
+  writetoaxis(1, position);
+}
 
 int main(int argc, char** argv) {
 
-  bool role_ping_out = 1, role_pong_back = 0;
-  bool role = 0;
-
   // Print preamble:
-  cout << "RF24/examples/pingpair_dyn/\n";
+  cout << "THE RADIO IS STARRRTING\n";
 
   // Setup and configure rf radio
   radio.begin();
@@ -88,67 +108,34 @@ int main(int argc, char** argv) {
   radio.printDetails();
 
 
-  /********* Role chooser ***********/
+  printf("\n ************ THEM DETAILS IS ABOVE ***********\n");
+  
+  radio.openReadingPipe(1, xpipes[1]);
+  radio.openReadingPipe(2, ypipes[1]);
 
-  printf("\n ************ Role Setup ***********\n");
-  string input = "";
-  char myChar = {0};
-  cout << "Choose a role: Enter 0 for receiver, 1 for transmitter (CTRL+C to exit) \n>";
-  getline(cin, input);
-
-  role = role_ping_out;
-  /***********************************/
-
-  radio.openWritingPipe(pipes[0]);
-  radio.openReadingPipe(1, pipes[1]);
+  radio.startListening();
 
 // forever loop
   while (1)
   {
 
-    if (role == role_ping_out)
-    {
-      // The payload will always be the same, what will change is how much of it we send.
-      static char send_payload[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ789012";
+    if radio.available(){
+      // Grab the response, compare, and send to debugging spew
+      char response[read_payload_size];
+      radio.read( response, read_payload_size );
 
-      // First, stop listening so we can talk.
-      radio.stopListening();
+      // Put a zero at the end for easy printing
+      response[read_payload_size] = 0;
 
-      // Take the time, and send it.  This will block until complete
-      printf("Now sending length %i...", next_payload_size);
-      radio.write( send_payload, next_payload_size );
+      // Spew it
+      printf("Got response size=%i value=%s\n\r", read_payload_size, read_payload_size);
 
-      // Now, continue listening
-      radio.startListening();
-
-      // Wait here until we get a response, or timeout
-      unsigned long started_waiting_at = millis();
-      bool timeout = false;
-      while ( ! radio.available() && ! timeout )
-        if (millis() - started_waiting_at > 500 )
-          timeout = true;
-
-      // Describe the results
-      if ( timeout )
-      {
-        printf("Failed, response timed out.\n\r");
-      }
-      else
-      {
-        // Grab the response, compare, and send to debugging spew
-        uint8_t len = radio.getDynamicPayloadSize();
-        radio.read( receive_payload, len );
-
-        // Put a zero at the end for easy printing
-        receive_payload[len] = 0;
-
-        // Spew it
-        printf("Got response size=%i value=%s\n\r", len, receive_payload);
-      }
-
-      // Try again 1s later
-      delay(100);
+      //Send the response msg to some sort of thing. 
     }
+
+    //Check to see if there's a command in the infile
+    //If there is one, parse it and broadcast to both axes
+
   }
 }
 
