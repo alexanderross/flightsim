@@ -62,8 +62,10 @@ RF24 radio(RPI_V2_GPIO_P1_15, RPI_V2_GPIO_P1_24, BCM2835_SPI_SPEED_8MHZ);
 /**************************************************************/
 
 // Radio pipe addresses comms - W, R. 
-const uint64_t xpipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
-const uint64_t ypipes[2] = { 0xF0F0F0F0C3LL, 0xF0F0F0F0B4LL };
+const uint64_t axispipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
+
+static char rfcfpath[] = "/tmp/rfpath";
+static char * panelcfpath = "/tmp/panelpath";
 
 
 
@@ -72,7 +74,8 @@ const int read_payload_size = 4;
 
 char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating NULL char
 
-void writetoaxis(int axis, uint16_t position){
+//Maybe axes this to use one read pipe and have each axes figure out what to get. 
+void broadcasttocontrollers(uint16_t position[2]){
   uint64_t currentwriteypipe = xpipes[0];
 
   radio.stopListening(); //Like what my girlfriend did when I made the grave one-time mistake of saying 'calm down'
@@ -84,16 +87,6 @@ void writetoaxis(int axis, uint16_t position){
   radio.write(position, write_payload_size);
 
   radio.startListening();
-
-}
-
-//Maybe axes this to use one read pipe and have each axes figure out what to get. 
-void writetoxaxis(uint16_t position){
-  writetoaxis(0, position);
-}
-
-void writetoyaxis(uint16_t position){
-  writetoaxis(1, position);
 }
 
 int main(int argc, char** argv) {

@@ -180,6 +180,7 @@ void checklinkenabled(){
         if((inint & SERDISABLEMASK) > 0){linkenabled = 0;}
         if((inint & SERRESETMASK) > 0){sendresetsignal();}
 
+        fflush(file);
         if(file != NULL){
           fclose(file);
         }

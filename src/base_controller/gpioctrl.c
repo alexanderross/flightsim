@@ -61,6 +61,7 @@ void committoserial(){
   printf("WRITING %d to serial resulting in final %d \n", serwritetmp, inint);
   rewind(serfile);
   fprintf(serfile, "%d", inint);
+  fflush(serfile);
   if(serfile != NULL){ fclose(serfile); }
 
   serwritetmp = 0;
