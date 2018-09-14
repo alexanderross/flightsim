@@ -151,9 +151,9 @@ void setgpioflags(int xactive, int yactive){
 void handleresponse(char response[]){
   for(int i = 0; i < read_payload_size; i++){
     if(response[i] == xactiveflag){
-      setpanelflags(1,0);
+      setgpioflags(1,0);
     }else if(response[i] == yactiveflag){
-      setpanelflags(0,1);
+      setgpioflags(0,1);
     }
   }
 }
