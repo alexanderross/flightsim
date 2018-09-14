@@ -12,6 +12,21 @@ cd wiringPi
 git pull origin
 ./build
 
+echo "Installing RF24"
+echo "Checking for SPI enabled"
+if [ -f /dev/spidev0.0 ]; then
+	echo "SPI is enabled. Cool."
+else
+  echo "SPI not enabled - use 'sudo raspi-config' to enable and re-run"
+  exit 1
+fi
+
+cd /home/pi
+git clone https://github.com/nRF24/RF24.git
+cd RF24
+./configure --driver=SPIDEV
+sudo make install -B
+
 echo "Installing Flight Sim Drivers"
 cd /home/pi
 git clone https://github.com/alexanderross/flightsim.git
