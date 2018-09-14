@@ -68,10 +68,14 @@ const uint64_t axispipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
 static char rfcfpath[] = "/tmp/rfpath";
 static char * panelcfpath = "/tmp/panelpath";
 
+static char xactiveflag = 'x';
+static char yactiveflag = 'y';
 
+static uint8_t ROLLACTIVEMASK = 0x40; //01000000 64
+static uint8_t PITCHACTIVEMASK = 0x20;//00100000 32
 
 const int write_payload_size = 9;
-const int read_payload_size = 4;
+const int read_payload_size = 2;
 
 int resetrequested = 0;
 
@@ -108,7 +112,49 @@ void fetchandbroadcast(){
     
     sprintf(outbuffer, "x%dy%dr%d", xcoord, ycoord, resetrequested);
 
+    broadcasttocontrollers(outbuffer);
+
     myfile.close();
+
+    remove(rfcfpath);
+  }
+}
+
+void setgpioflags(int xactive, int yactive){
+  uint8_t panelwritemask = 0;
+  if(xactive == 1){
+    panelwritemask = panelwritemask | ROLLACTIVEMASK;
+  }
+
+  if(yactive == 1){
+    panelwritemask = panelwritemask | PITCHACTIVEMASK;
+  }
+  
+  ifstream in(panelcfpath);
+  ofstream out(panelcfpath);
+
+  int prev_val;
+
+  if(in.is_open()){
+    in >> prev_val;
+  }else{
+    prev_val = 0;
+  }
+
+  out << (prev_val | panelwritemask);
+
+  in.close();
+  out.close();
+
+}
+
+void handleresponse(char response[]){
+  for(int i = 0; i < read_payload_size; i++){
+    if(response[i] == xactiveflag){
+      setpanelflags(1,0);
+    }else if(response[i] == yactiveflag){
+      setpanelflags(0,1);
+    }
   }
 }
 
@@ -139,8 +185,7 @@ int main(int argc, char** argv) {
       char response[read_payload_size];
       radio.read( response, read_payload_size );
 
-      // Put a zero at the end for easy printing
-      response[read_payload_size] = 0;
+      handleresponse(response);
 
       // Spew it
       printf("Got response size=%i value=%s\n\r", read_payload_size, read_payload_size);
@@ -148,6 +193,7 @@ int main(int argc, char** argv) {
       //Send the response msg to some sort of thing. 
     }
 
+    fetchandbroadcast();
     //Check to see if there's a command in the infile
     //If there is one, parse it and broadcast to both axes
 
