@@ -10,6 +10,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include "./RF24.h"
@@ -69,24 +70,46 @@ static char * panelcfpath = "/tmp/panelpath";
 
 
 
-const int write_payload_size = 4;
+const int write_payload_size = 9;
 const int read_payload_size = 4;
+
+int resetrequested = 0;
 
 char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating NULL char
 
 //Maybe axes this to use one read pipe and have each axes figure out what to get. 
-void broadcasttocontrollers(uint16_t position[2]){
-  uint64_t currentwriteypipe = xpipes[0];
+void broadcasttocontrollers(char broadcaststr[write_payload_size]){
+  uint64_t currentwriteypipe = axispipes[0];
 
   radio.stopListening(); //Like what my girlfriend did when I made the grave one-time mistake of saying 'calm down'
   
-  if(axis == 1){ currentwriteypipe = ypipes[0];}
-  
+  char writepayload[write_payload_size];
+
   radio.openWritingPipe(currentwriteypipe);
 
-  radio.write(position, write_payload_size);
+  radio.write(broadcaststr, write_payload_size);
 
   radio.startListening();
+}
+
+void fetchandbroadcast(){
+  uint32_t broadcast;
+  ifstream myfile (rfcfpath);
+  if (myfile.is_open()){
+    myfile >> broadcast;
+
+    uint32_t broadcast = 0x3FFFF;
+      
+    char outbuffer[write_payload_size];
+    
+    uint16_t xcoord = (broadcast & 0x1FF);
+    uint16_t ycoord = (broadcast & (0x1FF << 9)) >> 9;
+    int resetrequested = (broadcast & (1 << 18)) >> 18;  
+    
+    sprintf(outbuffer, "x%dy%dr%d", xcoord, ycoord, resetrequested);
+
+    myfile.close();
+  }
 }
 
 int main(int argc, char** argv) {
@@ -103,8 +126,7 @@ int main(int argc, char** argv) {
 
   printf("\n ************ THEM DETAILS IS ABOVE ***********\n");
   
-  radio.openReadingPipe(1, xpipes[1]);
-  radio.openReadingPipe(2, ypipes[1]);
+  radio.openReadingPipe(1, axispipes[1]);
 
   radio.startListening();
 
