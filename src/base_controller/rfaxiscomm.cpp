@@ -13,7 +13,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include "./RF24.h"
+#include <RF24/RF24.h>
 
 
 using namespace std;
