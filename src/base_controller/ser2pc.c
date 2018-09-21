@@ -101,6 +101,7 @@ void set_mincount(int fd, int mcount)
 void sendtorf(uint8_t mask){
     FILE *fd = fopen(rfcfpath, "w+");
 
+    fprintf(fd, "%d", mask);
     // Write the input arr2ing on FIFO
     // and close it
     //write(fd, arrrg, strlen(arrrg)+1);
