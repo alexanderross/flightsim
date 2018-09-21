@@ -10,5 +10,5 @@ echo "Compiling Serial Comm executable"
 gcc $FS_BASE/ser2pc.c -g -o $FS_BASE/ser-comm
 
 echo "Compiling RF Comm executable"
-g++ $FS_BASE/rfaxiscomm.cpp -lrf24 -o $FS_BASE/rfaxis
+g++ $FS_BASE/rfaxiscomm.cpp -lrf24 -o $FS_BASE/rf24-comm
 
