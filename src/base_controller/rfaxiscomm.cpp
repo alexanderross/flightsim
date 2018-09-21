@@ -167,6 +167,7 @@ int main(int argc, char** argv) {
   radio.begin();
   radio.enableDynamicPayloads();
   radio.setRetries(5, 15);
+  radio.setPALevel(RF24_PA_MED);
   radio.printDetails();
 
 
