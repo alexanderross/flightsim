@@ -66,7 +66,7 @@ RF24 radio(RPI_V2_GPIO_P1_15, RPI_V2_GPIO_P1_24, BCM2835_SPI_SPEED_8MHZ);
 const uint64_t axispipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
 
 static char rfcfpath[] = "/tmp/rfpath";
-static char * panelcfpath = "/tmp/panelpath";
+static char panelcfpath[] = "/tmp/panelpath";
 
 static char xactiveflag = 'x';
 static char yactiveflag = 'y';
@@ -99,7 +99,7 @@ void broadcasttocontrollers(char broadcaststr[write_payload_size]){
 void fetchandbroadcast(){
   uint32_t broadcast;
   ifstream myfile (rfcfpath);
-  if (myfile.is_open()){
+  if(myfile.is_open()){
     myfile >> broadcast;
 
     uint32_t broadcast = 0x3FFFF;
@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
   while (1)
   {
 
-    if radio.available(){
+    if(radio.available()){
       // Grab the response, compare, and send to debugging spew
       char response[read_payload_size];
       radio.read( response, read_payload_size );
