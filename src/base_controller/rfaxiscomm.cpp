@@ -101,14 +101,12 @@ void fetchandbroadcast(){
   ifstream myfile (rfcfpath);
   if(myfile.is_open()){
     myfile >> broadcast;
-
-    uint32_t broadcast = 0x3FFFF;
       
     char outbuffer[write_payload_size];
     
     uint16_t xcoord = (broadcast & 0x1FF);
     uint16_t ycoord = (broadcast & (0x1FF << 9)) >> 9;
-    int resetrequested = (broadcast & (1 << 18)) >> 18;  
+    int resetrequested = (broadcast & (1 << 18)) >> 18; 
     
     sprintf(outbuffer, "x%dy%dr%d", xcoord, ycoord, resetrequested);
 

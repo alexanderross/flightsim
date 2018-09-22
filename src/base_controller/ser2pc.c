@@ -105,6 +105,7 @@ void sendtorf(uint8_t mask){
     // Write the input arr2ing on FIFO
     // and close it
     //write(fd, arrrg, strlen(arrrg)+1);
+    printf("SENT RESET TO RF\n");
     fclose(fd);
 }
 
