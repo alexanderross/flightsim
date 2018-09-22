@@ -103,6 +103,8 @@ void fetchandbroadcast(){
     myfile >> broadcast;
       
     char outbuffer[write_payload_size];
+
+    printf("Broadcast recv %d", broadcast);
     
     uint16_t xcoord = (broadcast & 0x1FF);
     uint16_t ycoord = (broadcast & (0x1FF << 9)) >> 9;
