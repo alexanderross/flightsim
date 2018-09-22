@@ -74,7 +74,7 @@ static char yactiveflag = 'y';
 static uint8_t ROLLACTIVEMASK = 0x40; //01000000 64
 static uint8_t PITCHACTIVEMASK = 0x20;//00100000 32
 
-const int write_payload_size = 9;
+const int write_payload_size = 10;
 const int read_payload_size = 2;
 
 int resetrequested = 0;
