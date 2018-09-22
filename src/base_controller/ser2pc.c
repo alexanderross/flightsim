@@ -123,7 +123,7 @@ void sendresetsignal(){
     linkenabled = 0;
     resetrequested = 1;
 
-    sendtorf(SERRESETMASK);    
+    sendtorf(RF_RESET_SHIFT);    
 }
 
 void sendcoordstorf(int xcoord, int ycoord){
