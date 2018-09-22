@@ -189,7 +189,7 @@ int main(int argc, char** argv) {
       handleresponse(response);
 
       // Spew it
-      printf("Got response size=%i value=%s\n\r", read_payload_size, read_payload_size);
+      printf("Got response size=%i value=%s\n\r", read_payload_size, response);
 
       //Send the response msg to some sort of thing. 
     }
