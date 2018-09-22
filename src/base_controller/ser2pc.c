@@ -100,12 +100,11 @@ void set_mincount(int fd, int mcount)
 
 void sendtorf(uint8_t mask){
     FILE *fd = fopen(rfcfpath, "w+");
-
     fprintf(fd, "%d", mask);
     // Write the input arr2ing on FIFO
     // and close it
     //write(fd, arrrg, strlen(arrrg)+1);
-    printf("SENT RESET TO RF\n");
+    printf("SENT %d TO RF\n", mask);
     fclose(fd);
 }
 
@@ -123,7 +122,7 @@ void sendresetsignal(){
     linkenabled = 0;
     resetrequested = 1;
 
-    sendtorf(RF_RESET_SHIFT);    
+    sendtorf((1 << RF_RESET_SHIFT));    
 }
 
 void sendcoordstorf(int xcoord, int ycoord){
