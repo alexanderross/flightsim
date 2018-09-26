@@ -29,9 +29,9 @@ static uint8_t ROLLACTIVEMASK = 0x40; //01000000 64
 static uint8_t PITCHACTIVEMASK = 0x20;//00100000 32
 static uint8_t ENABLEDMASK = 0x10;    //00010000 16
 static uint8_t DISABLEDMASK = 0x08;    //00001000 8
-static uint8_t SERENABLEMASK = 0x80;
-static uint8_t SERDISABLEMASK = 0x40;
-static uint8_t SERRESETMASK = 0x20;
+static uint8_t SERENABLEMASK = 0x80; // 128
+static uint8_t SERDISABLEMASK = 0x40; // 64
+static uint8_t SERRESETMASK = 0x20; // 32
 
 int linkenableddown = 0;
 int resetdown = 0;
@@ -161,11 +161,15 @@ void activatereset(void){
 void checkipcstate(){
 	uint32_t inint = readfromsharedmem(panelcfpath,1);
 
-  if((inint & LINKACTIVEMASK) > 0){showlinkactive();};
-  if((inint & PITCHACTIVEMASK) > 0){showPitchAxisUp();}
-  if((inint & ROLLACTIVEMASK) > 0){showRollAxisUp();}
-  if((inint & ENABLEDMASK) > 0){setlinkenabled(1);}
-  if((inint & DISABLEDMASK) > 0){setlinkenabled(0);}
+	if(inint >= 1){
+    printf("Recieved %d", inint);
+
+	  if((inint & LINKACTIVEMASK) > 0){showlinkactive();};
+	  if((inint & PITCHACTIVEMASK) > 0){showPitchAxisUp();}
+	  if((inint & ROLLACTIVEMASK) > 0){showRollAxisUp();}
+	  if((inint & ENABLEDMASK) > 0){setlinkenabled(1);}
+	  if((inint & DISABLEDMASK) > 0){setlinkenabled(0);}
+	}
 
 }
 

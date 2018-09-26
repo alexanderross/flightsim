@@ -213,7 +213,7 @@ void process_command(char* coord_str){
 }
 
 void checklinkenabled(){
-    uint32_t inint = readfromsharedmem(panelcfpath, 1);
+    uint32_t inint = readfromsharedmem(sercfpath, 1);
 
     if((inint & SERENABLEMASK) > 0){linkenabled = 1;};
     if((inint & SERDISABLEMASK) > 0){linkenabled = 0;}
