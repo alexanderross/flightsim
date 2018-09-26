@@ -132,7 +132,7 @@ uint32_t readfromsharedmem(char * path, int do_clear){
     key_t key;
     uint32_t *shm, *s;
 
-    uint32_t returnval;
+    uint32_t returnval = 0;
 
     key = ftok(path, 65);
 
@@ -146,7 +146,7 @@ uint32_t readfromsharedmem(char * path, int do_clear){
 
     s = shm;
 
-    returnval = *s;
+    returnval = returnval | *s;
 
     if(do_clear){
         *s = 0;

@@ -129,7 +129,7 @@ uint32_t readfromsharedmem(char * path, int do_clear){
     key_t key;
     uint32_t *shm, *s;
 
-    uint32_t returnval;
+    uint32_t returnval = 0;
 
     key = ftok(path, 65);
 
@@ -143,7 +143,7 @@ uint32_t readfromsharedmem(char * path, int do_clear){
 
     s = shm;
 
-    returnval = *s;
+    returnval = returnval | *s;
 
     if(do_clear){
         *s = 0;
@@ -157,6 +157,8 @@ uint32_t readfromsharedmem(char * path, int do_clear){
 void fetchandbroadcast(){
   uint32_t broadcast = readfromsharedmem(rfcfpath, 1);
   if(broadcast != 0){
+    char outbuffer[write_payload_size];
+
     uint16_t xcoord = (broadcast & 0x1FF);
     uint16_t ycoord = (broadcast & (0x1FF << 9)) >> 9;
     int resetrequested = (broadcast & (1 << 18)) >> 18; 
