@@ -116,7 +116,8 @@ void committoserial(){
 void setlinkenabled(int state){
 	digitalWrite(LinkEnPin, state);
 	linkenabled = state;
-
+	printf("LINK STATE SET TO %d\n", state);
+	
 	if(linkenabled){ 
 		queueforserialwrite(SERENABLEMASK);
 	}else{
@@ -162,7 +163,7 @@ void checkipcstate(){
 	uint32_t inint = readfromsharedmem(panelcfpath,1);
 
 	if(inint >= 1){
-    printf("Recieved %d", inint);
+    printf("Recieved %d\n", inint);
 
 	  if((inint & LINKACTIVEMASK) > 0){showlinkactive();};
 	  if((inint & PITCHACTIVEMASK) > 0){showPitchAxisUp();}
