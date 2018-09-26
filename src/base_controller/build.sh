@@ -13,5 +13,5 @@ echo "Compiling RF Comm executable"
 g++ $FS_BASE/rfaxiscomm.cpp -lrf24 -o $FS_BASE/rf24-comm
 
 echo "Compiling debugging memory writer"
-gcc $FS_BASE/writesharedmem.c -o memwt
+gcc $FS_BASE/writetosharedmem.c -o memwt
 
