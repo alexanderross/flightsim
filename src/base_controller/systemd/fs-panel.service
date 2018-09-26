@@ -3,7 +3,7 @@ Description=Driver for Flight Sim Base Controller hardware input/output
 After=fs-build.service
 
 [Service]
-ExecStart=/home/pi/flightsim/src/base_controller/gpio-panel > /log/gpiopanel.log
+ExecStart=/home/pi/flightsim/src/base_controller/gpio-panel
 Restart=on-failure
 RestartSec=30
 

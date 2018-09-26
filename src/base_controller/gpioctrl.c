@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/ipc.h> 
+#include <sys/shm.h>
 #include <stdint.h>
 
 #define PitchPin 4
@@ -50,22 +52,65 @@ void queueforserialwrite(uint8_t mask){
 	printf("Queued write for %d, results in %d\n",mask, serwritetmp);
 }
 
+void writetosharedmem(char * path, uint32_t contents, int do_overwrite){
+  int shmid;
+  key_t key;
+  uint32_t *shm, *s;
+
+  key = ftok(path, 65);
+
+  if ((shmid = shmget(key, 16, IPC_CREAT | 0666)) < 0) {
+      perror("shmget error");
+  }
+
+  if ((shm = (uint32_t *) shmat(shmid, NULL, 0)) == (uint32_t *) -1) {
+      perror("shmat error");
+  }
+
+  s = shm;
+
+  if(do_overwrite){
+    *s = contents;
+  }else{
+    *s = *s | contents;
+  }
+
+  shmdt(shm);
+
+}
+
+uint32_t readfromsharedmem(char * path, int do_clear){
+    int shmid;
+    key_t key;
+    uint32_t *shm, *s;
+
+    uint32_t returnval;
+
+    key = ftok(path, 65);
+
+    if ((shmid = shmget(key, 16, IPC_CREAT | 0666)) < 0) {
+        perror("shmget error");
+    }
+
+    if ((shm = (uint32_t *) shmat(shmid, NULL, 0)) == (uint32_t *) -1) {
+        perror("shmat error");
+    }
+
+    s = shm;
+
+    returnval = *s;
+
+    if(do_clear){
+        *s = 0;
+    }
+
+    shmdt(shm);
+
+    return returnval;
+}
+
 void committoserial(){
-	FILE *serfile;
-	serfile = fopen(sercfpath,"w+");
-
-  uint8_t inint;
-  fscanf(serfile, "%d", inint);
-  printf("FILE CURRENTLY CONTAINS %d", inint);
-  inint = inint | serwritetmp;
-  printf("WRITING %d to serial resulting in final %d \n", serwritetmp, inint);
-  rewind(serfile);
-  fprintf(serfile, "%d", inint);
-  fflush(serfile);
-  if(serfile != NULL){ fclose(serfile); }
-
-  serwritetmp = 0;
-
+	writetosharedmem(sercfpath, serwritetmp, 0);
 }
 
 void setlinkenabled(int state){
@@ -114,31 +159,14 @@ void activatereset(void){
 }
 
 void checkipcstate(){
-	FILE* file;
-	file = fopen(panelcfpath, "r");
+	uint32_t inint = readfromsharedmem(panelcfpath,1);
 
-	if(file == NULL){
-		//Nothin new
-		return;
-	}else{
-    uint8_t inint;
-    usleep(20);
-    fscanf(file, "%d", &inint);
-    printf("READ '%d' \n", inint);
+  if((inint & LINKACTIVEMASK) > 0){showlinkactive();};
+  if((inint & PITCHACTIVEMASK) > 0){showPitchAxisUp();}
+  if((inint & ROLLACTIVEMASK) > 0){showRollAxisUp();}
+  if((inint & ENABLEDMASK) > 0){setlinkenabled(1);}
+  if((inint & DISABLEDMASK) > 0){setlinkenabled(0);}
 
-    printf("LINK ACTIVE IS %d \n", LINKACTIVEMASK & inint);
-
-    if((inint & LINKACTIVEMASK) > 0){showlinkactive();};
-    if((inint & PITCHACTIVEMASK) > 0){showPitchAxisUp();}
-    if((inint & ROLLACTIVEMASK) > 0){showRollAxisUp();}
-    if((inint & ENABLEDMASK) > 0){setlinkenabled(1);}
-    if((inint & DISABLEDMASK) > 0){setlinkenabled(0);}
-
-    if(file != NULL){
-      fclose(file);
-    }
-    remove(panelcfpath);
-	}
 }
 
 int main(int argc, char *argv[]) {

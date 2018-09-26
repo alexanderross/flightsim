@@ -6,6 +6,8 @@
 #include <termios.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/shm.h>
+#include <sys/ipc.h> 
 #include <sys/stat.h>
 #include <stdint.h>
 
@@ -98,23 +100,69 @@ void set_mincount(int fd, int mcount)
         printf("Error tcsetattr: %s\n", strerror(errno));
 }
 
-void sendtorf(uint8_t mask){
-    FILE *fd = fopen(rfcfpath, "w+");
-    fprintf(fd, "%d", mask);
-    // Write the input arr2ing on FIFO
-    // and close it
-    //write(fd, arrrg, strlen(arrrg)+1);
-    printf("SENT %d TO RF\n", mask);
-    fclose(fd);
+void writetosharedmem(char * path, uint32_t contents, int do_overwrite){
+  int shmid;
+  key_t key;
+  uint32_t *shm, *s;
+
+  key = ftok(path, 65);
+
+  if ((shmid = shmget(key, 16, IPC_CREAT | 0666)) < 0) {
+      perror("shmget error");
+  }
+
+  if ((shm = (uint32_t *) shmat(shmid, NULL, 0)) == (uint32_t *) -1) {
+      perror("shmat error");
+  }
+
+  s = shm;
+
+  if(do_overwrite){
+    *s = contents;
+  }else{
+    *s = *s | contents;
+  }
+
+  shmdt(shm);
+
+}
+
+uint32_t readfromsharedmem(char * path, int do_clear){
+    int shmid;
+    key_t key;
+    uint32_t *shm, *s;
+
+    uint32_t returnval;
+
+    key = ftok(path, 65);
+
+    if ((shmid = shmget(key, 16, IPC_CREAT | 0666)) < 0) {
+        perror("shmget error");
+    }
+
+    if ((shm = (uint32_t *) shmat(shmid, NULL, 0)) == (uint32_t *) -1) {
+        perror("shmat error");
+    }
+
+    s = shm;
+
+    returnval = *s;
+
+    if(do_clear){
+        *s = 0;
+    }
+
+    shmdt(shm);
+
+    return returnval;
+}
+
+void sendtorf(uint32_t mask){
+    writetosharedmem(rfcfpath, mask, 1);
 }
 
 void sendtopanel(uint8_t mask){
-    FILE *fd = fopen(panelcfpath, "w+");
-
-    // Write the input arr2ing on FIFO
-    // and close it
-   fprintf(fd, "%d", mask);
-   fclose(fd);
+    writetosharedmem(panelcfpath, mask, 0);
 }
 
 void sendresetsignal(){
@@ -165,29 +213,11 @@ void process_command(char* coord_str){
 }
 
 void checklinkenabled(){
-    FILE* file;
-    file = fopen(sercfpath, "r");
+    uint32_t inint = readfromsharedmem(panelcfpath, 1);
 
-    if(file == NULL){
-        //Nothin new
-        return;
-    }else{
-        uint8_t inint;
-        usleep(20);
-        fscanf(file, "%d", &inint);
-        printf("READ '%d' \n", inint);
-
-        if((inint & SERENABLEMASK) > 0){linkenabled = 1;};
-        if((inint & SERDISABLEMASK) > 0){linkenabled = 0;}
-        if((inint & SERRESETMASK) > 0){sendresetsignal();}
-
-        fflush(file);
-        if(file != NULL){
-          fclose(file);
-        }
-
-        remove(sercfpath);
-    }
+    if((inint & SERENABLEMASK) > 0){linkenabled = 1;};
+    if((inint & SERDISABLEMASK) > 0){linkenabled = 0;}
+    if((inint & SERRESETMASK) > 0){sendresetsignal();}
 }
 
 

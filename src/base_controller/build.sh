@@ -12,3 +12,6 @@ gcc $FS_BASE/ser2pc.c -g -o $FS_BASE/ser-comm
 echo "Compiling RF Comm executable"
 g++ $FS_BASE/rfaxiscomm.cpp -lrf24 -o $FS_BASE/rf24-comm
 
+echo "Compiling debugging memory writer"
+gcc $FS_BASE/writesharedmem.c -o memwt
+

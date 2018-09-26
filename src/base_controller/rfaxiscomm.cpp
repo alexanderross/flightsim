@@ -14,6 +14,7 @@
 #include <sstream>
 #include <string>
 #include <RF24/RF24.h>
+#include <sys/shm.h>
 
 
 using namespace std;
@@ -96,16 +97,66 @@ void broadcasttocontrollers(char broadcaststr[write_payload_size]){
   radio.startListening();
 }
 
-void fetchandbroadcast(){
-  uint32_t broadcast;
-  ifstream myfile (rfcfpath);
-  if(myfile.is_open()){
-    myfile >> broadcast;
-      
-    char outbuffer[write_payload_size];
+void writetosharedmem(char * path, uint32_t contents, int do_overwrite){
+  int shmid;
+  key_t key;
+  uint32_t *shm, *s;
 
-    printf("Broadcast recv %d\n", broadcast);
-    
+  key = ftok(path, 65);
+
+  if ((shmid = shmget(key, 16, IPC_CREAT | 0666)) < 0) {
+      perror("shmget error");
+  }
+
+  if ((shm = (uint32_t *) shmat(shmid, NULL, 0)) == (uint32_t *) -1) {
+      perror("shmat error");
+  }
+
+  s = shm;
+
+  if(do_overwrite){
+    *s = contents;
+  }else{
+    *s = *s | contents;
+  }
+
+  shmdt(shm);
+
+}
+
+uint32_t readfromsharedmem(char * path, int do_clear){
+    int shmid;
+    key_t key;
+    uint32_t *shm, *s;
+
+    uint32_t returnval;
+
+    key = ftok(path, 65);
+
+    if ((shmid = shmget(key, 16, IPC_CREAT | 0666)) < 0) {
+        perror("shmget error");
+    }
+
+    if ((shm = (uint32_t *) shmat(shmid, NULL, 0)) == (uint32_t *) -1) {
+        perror("shmat error");
+    }
+
+    s = shm;
+
+    returnval = *s;
+
+    if(do_clear){
+        *s = 0;
+    }
+
+    shmdt(shm);
+
+    return returnval;
+}
+
+void fetchandbroadcast(){
+  uint32_t broadcast = readfromsharedmem(rfcfpath, 1);
+  if(broadcast != 0){
     uint16_t xcoord = (broadcast & 0x1FF);
     uint16_t ycoord = (broadcast & (0x1FF << 9)) >> 9;
     int resetrequested = (broadcast & (1 << 18)) >> 18; 
@@ -113,15 +164,11 @@ void fetchandbroadcast(){
     sprintf(outbuffer, "x%dy%dr%d", xcoord, ycoord, resetrequested);
 
     broadcasttocontrollers(outbuffer);
-
-    myfile.close();
-
-    remove(rfcfpath);
   }
 }
 
 void setgpioflags(int xactive, int yactive){
-  uint8_t panelwritemask = 0;
+  uint32_t panelwritemask = 0;
   if(xactive == 1){
     panelwritemask = panelwritemask | ROLLACTIVEMASK;
   }
@@ -130,21 +177,7 @@ void setgpioflags(int xactive, int yactive){
     panelwritemask = panelwritemask | PITCHACTIVEMASK;
   }
   
-  ifstream in(panelcfpath);
-  ofstream out(panelcfpath);
-
-  int prev_val;
-
-  if(in.is_open()){
-    in >> prev_val;
-  }else{
-    prev_val = 0;
-  }
-
-  out << (prev_val | panelwritemask);
-
-  in.close();
-  out.close();
+  writetosharedmem(panelcfpath, panelwritemask, 0);
 
 }
 
@@ -187,6 +220,9 @@ int main(int argc, char** argv) {
       radio.read( response, read_payload_size );
 
       handleresponse(response);
+
+      //temporary3
+      setgpioflags(1,1);
 
       // Spew it
       printf("Got response size=%i value=%s\n\r", read_payload_size, response);
