@@ -215,9 +215,13 @@ void process_command(char* coord_str){
 void checklinkenabled(){
     uint32_t inint = readfromsharedmem(sercfpath, 1);
 
-    if((inint & SERENABLEMASK) > 0){linkenabled = 1;};
-    if((inint & SERDISABLEMASK) > 0){linkenabled = 0;}
-    if((inint & SERRESETMASK) > 0){sendresetsignal();}
+    if(inint >= 1){
+        printf("RECIEVED %d\n",inint);
+
+        if((inint & SERENABLEMASK) > 0){linkenabled = 1;};
+        if((inint & SERDISABLEMASK) > 0){linkenabled = 0;}
+        if((inint & SERRESETMASK) > 0){sendresetsignal();}
+    }
 }
 
 
