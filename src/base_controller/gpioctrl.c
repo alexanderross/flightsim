@@ -49,7 +49,7 @@ char * sercfpath = "/tmp/serpath";
 
 void queueforserialwrite(uint8_t mask){
 	serwritetmp = serwritetmp | mask;
-	printf("Queued write for %d, results in %d\n",mask, serwritetmp);
+	printf("Queued write for %d, results in %d\n", mask, serwritetmp);
 }
 
 void writetosharedmem(char * path, uint32_t contents, int do_overwrite){
@@ -111,6 +111,7 @@ uint32_t readfromsharedmem(char * path, int do_clear){
 
 void committoserial(){
 	writetosharedmem(sercfpath, serwritetmp, 0);
+	serwritetmp = 0;
 }
 
 void setlinkenabled(int state){
@@ -204,6 +205,7 @@ int main(int argc, char *argv[]) {
 			checkipcstate();
 
 			if(serwritetmp > 0){
+				printf("committing %d to serial", serwritetmp);
 				committoserial();
 			}
 
