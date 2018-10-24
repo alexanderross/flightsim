@@ -17,7 +17,7 @@ class SerialInterfaceUtil
 
   class << self
     def start(args)
-      self.new(port: args.first || '/dev/ttyACM0')
+      self.new(port: args.first || '/dev/tty.usbserial')
     end
   end
 
@@ -29,8 +29,9 @@ class SerialInterfaceUtil
   end
 
   def run
-    while input = get_input
-      
+    while 1
+      input = get_input
+      k=7
     end
   end
 
@@ -63,20 +64,20 @@ class SerialInterfaceUtil
   end
 
   def proc_read(address)
-    msg = SerialDriveMsg.new(:cmd => 0x03, :address => address, :data_2 => 0x01)
+    msg = SerialDriveMsg.new(:cmd => 0x03, :address => address.to_i, :data_2 => 0x01)
     serconn.write(msg.to_msg)
-    return wait_for_response
+    puts wait_for_response
   end
 
   def proc_write(address, value, do_wait_for_response = false)
-     msg = SerialDriveMsg.new(:cmd => 0x06, :address => address, data_2: value)
-     serconn.write(msg.to_msg)
+    msg = SerialDriveMsg.new(:cmd => 0x06, :address => address.to_i, data_2: value.to_i)
+    serconn.write(msg.to_msg)
 
-     return if do_wait_for_response
-       wait_for_response
-      else
-        ""
-      end
+    if do_wait_for_response
+      puts wait_for_response
+    else
+      return
+    end
 
   end
 
@@ -88,7 +89,7 @@ class SerialInterfaceUtil
     Timeout.timeout(CONN_TIMEOUT) do 
       response = ""
 
-      while response != ""
+      while response == ""
         response = serconn.read(32)
       end 
 
@@ -99,7 +100,8 @@ class SerialInterfaceUtil
     return nil
   end
 
-  def proc_exit()
+  def proc_exit(exit="yeah")
+    exit
     return nil
   end
 end
@@ -108,29 +110,34 @@ class SerialDriveMsg
   def initialize(options = {})
     @address = 0x01
     @cmd = options[:cmd] || 0x03
-    @data_address = options.fetch(:address)
+    data_address = options.fetch(:address)
+    @data_address_hi, @data_address_lo = ("%04X" % data_address).to_s.split('').each_slice(2).to_a.map{|i| i.join.to_i(16)}
     @data_1 = options.fetch(:data_1, 0x00)
     @data_2 = options.fetch(:data_2, 0x00)
   end
 
+  def to_hx(item)
+    sprintf("%02X", item).split('').map{|i| "%02X" % i.ord}.join("")
+  end
+
   def to_msg()
-    str = ""
-    str << sprintf("%02X", @address)
-    str << sprintf("%02X", @cmd)
-    str << sprintf("%04X", @data_address)
-    str << sprintf("%02X", @data_1)
-    str << sprintf("%02X", @data_2)
-    str << sprintf("%02X", checksum)
-    str << sprintf("%02X", 0x0D)
-    str << sprintf("%02X", 0x0A)
+    str = "%02X" % ':'.ord
+    str << to_hx(@address)
+    str << to_hx(@cmd)
+    str << to_hx(@data_address_hi)
+    str << to_hx(@data_address_lo)
+    str << to_hx(@data_1)
+    str << to_hx(@data_2)
+    str << to_hx(checksum)
+    str << "0D0A"
     str
   end
 
   def checksum()
-    (-(@address + @cmd + @data_address + @data_1 + @data_2) & 0xFF)
+    (-(@address + @cmd + @data_address_lo + @data_1 + @data_2) & 0xFF)
   end
 
 end
 
 
-#SerialInterfaceUtil.start(ARGV)
+SerialInterfaceUtil.start(ARGV)
