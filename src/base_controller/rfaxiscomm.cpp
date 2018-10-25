@@ -36,7 +36,7 @@ int resetrequested = 0;
 char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating NULL char
 
 //Maybe axes this to use one read pipe and have each axes figure out what to get. 
-void broadcasttocontrollers(char broadcaststr[write_payload_size]){
+void broadcasttocontrollers(char broadcaststr[write_payload_size+1]){
   uint64_t currentwriteypipe = axispipes[0];
 
   radio.stopListening(); //Like what my SO did when I made the grave one-time mistake of saying 'calm down'
@@ -105,6 +105,24 @@ uint32_t readfromsharedmem(char * path, int do_clear){
     shmdt(shm);
 
     return returnval;
+}
+
+//This is dirty, but it does what it needs to do.
+void readfromcmdmem(){
+  int basicId = shmget(1337, 256, 0644 | IPC_CREAT);
+  char *address = shmat(basicId, 0, 0);
+  getchar();
+  char *s;
+  int i;
+  
+  s = address;
+
+  if(strlen(*s) != 0){
+    printf(*s);
+    printf("\0\n");
+  }
+
+  shmdt(address);
 }
 
 void fetchandbroadcast(){
@@ -185,7 +203,7 @@ int main(int argc, char** argv) {
       //Send the response msg to some sort of thing. 
     }
 
-    //Check to see if there's a command in the infile
+    //Check to see if there's a command in the shared mem
     //If there is one, parse it and broadcast to both axes
     fetchandbroadcast();
 
