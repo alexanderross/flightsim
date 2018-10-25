@@ -17,22 +17,21 @@
 
 RF24 radio(D4,D8);
 
-// sets the role of this unit in hardware.  Connect to GND to be the 'pong' receiver
-// Leave open to be the 'ping' transmitter
-const int role_pin = 5;
-
 //
 // Topology
 //
 
 // Radio pipe addresses for the 2 nodes to communicate x and y share them.
 const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
+static int ZERO_STOP_PIN = D0;
 
 //
 // Payload
 //
 
 const int read_payload_size = 10f ;
+
+int resetrequested = 0;
 
 //When each is made for the individual axis, each will have a unique ACK
 char ack_msg[] = "OK";
@@ -46,7 +45,9 @@ void setup(void)
   // Print preamble
   //
 
-  Serial.begin(115200);
+  pinMode(ZERO_STOP_PIN, INPUT);
+
+  Serial.begin(38400);
 
   //
   // Setup and configure rf radio
@@ -77,6 +78,61 @@ void setup(void)
   radio.startListening();
 }
 
+// Get the ASCII message to write value to dest_register on the drive.
+static char nibble_to_hex_ascii(uint8_t nibble) {
+    char c;
+    if (nibble < 10) {
+        c = nibble + '0';
+    } else {
+        c = nibble - 10 + 'A';
+    }
+    return c;
+}
+
+void write_to_register(int dest_register, int value){
+  uint8_t message[10];
+  message[0] = 1;
+  message[1] = 6;
+  message[2] = dest_register >> 8;
+  message[3] = dest_register & 0x00ff;
+  message[4] = value >> 8;
+  message[5] = value & 0x00ff;
+
+  uint8_t lrc = 0; 
+  int iter = 6;
+
+  while (iter--) {
+      lrc += message[iter+1];
+  }
+  
+  lrc = (-lrc) - 1;
+  message[6] = lrc;
+  
+  char ascii_message[18];
+
+  ascii_message[0] = ':';
+  
+  for(int k = 0; k < 7; k++){
+    ascii_message[(2*k)+1] = nibble_to_hex_ascii(message[k] >> 4);
+    ascii_message[(2*k)+2] = nibble_to_hex_ascii(message[k] & 0x0f);
+  }
+  
+  ascii_message[15] = '\r';
+  ascii_message[16] = '\n';
+  ascii_message[17] = '\0';
+
+  Serial.print(ascii_message);
+}
+
+void resetposition(){
+  //Or put in a speed request here.
+
+  while(!digitalRead(ZERO_STOP_PIN)){
+    //Keep inching axis drive until we hit the stop.
+  }
+}
+
+
 void loop(void)
 {
 
@@ -102,8 +158,10 @@ void loop(void)
     Serial.print(F(" value="));
     Serial.println(receive_payload);
 
-    //TODO - transmit to the axis drive after doing 360' translation and possible movement preemption
+    //TODO - transmit to the axis drive after doing 360' translation
     //That's a big todo
+
+    // Parse out that reset signal too
 
     // First, stop listening so we can talk
     radio.stopListening();
