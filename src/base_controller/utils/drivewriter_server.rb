@@ -46,12 +46,12 @@ class ShmemWriter
   end
 
   def self.write(axis, register, value)
-    basic_id = self.new.getShmid(123)
+    basic_id = self.new.getShmid(1337)
     address = self.new.getMem(basic_id)
     pointer = Fiddle::Pointer.new(address, 256)
 
     string = axis.upcase + sprintf("%03d", register.to_i) + sprintf("%06d", value.to_i)
-    second_pointer = Fiddle::Pointer.new(string.object_id << 1)
-    pointer[0, 256] = second_pointer
+    second_pointer = Fiddle::Pointer.new(string.object_id)
+    pointer = second_pointer
   end
 end
