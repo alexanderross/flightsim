@@ -48,6 +48,7 @@ class ShmemWriter
   def self.write(axis, register, value)
     basic_id = self.new.getShmid(1337)
     address = self.new.getMem(basic_id)
+    puts "ADDRESS #{address}"
     pointer = Fiddle::Pointer.new(address, 256)
 
     string = axis.upcase + sprintf("%03d", register.to_i) + sprintf("%06d", value.to_i)

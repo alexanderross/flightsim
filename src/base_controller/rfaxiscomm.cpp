@@ -109,11 +109,11 @@ uint32_t readfromsharedmem(char * path, int do_clear){
 
 //This is dirty, but it does what it needs to do.
 void readfromcmdmem(){
-  char *address[10];
+  char *address;
 
   int basicId = shmget(1337, 256, 0644 | IPC_CREAT);
-  address[0] = (char *) shmat(basicId, 0, 0);
-  char *s[10];
+  address = (char *) shmat(basicId, NULL, 0);
+  char *s;
   int i;
   
   s = address;
@@ -127,6 +127,7 @@ void readfromcmdmem(){
 }
 
 void fetchandbroadcast(){
+  readfromcmdmem();
   uint32_t broadcast = readfromsharedmem(rfcfpath, 1);
   if(broadcast != 0){
     char outbuffer[write_payload_size];
