@@ -4,7 +4,7 @@ After=fs-build.service
 
 [Service]
 WorkingDirectory=/home/pi/flightsim/src/base_controller/utils
-ExecStart=rackup -o 0.0.0.0 -p 9090
+ExecStart=/usr/local/bin/rackup -o 0.0.0.0 -p 9090
 Restart=on-failure
 RestartSec=30
 
