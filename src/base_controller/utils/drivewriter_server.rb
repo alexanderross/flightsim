@@ -21,7 +21,7 @@ class App < Rack::App
   def write_to_drive(axis, register, value)
     #Fine we'll use a damn file
     begin
-      File.open(yourfile, 'w') { |file| file.write(axis.upcase + sprintf("%03d", register.to_i) + sprintf("%06d", value.to_i)) }
+      File.open(RFCOMM_CMD_PATH, 'w') { |file| file.write(axis.upcase + sprintf("%03d", register.to_i) + sprintf("%06d", value.to_i)) }
       return "Wrote #{value} to #{register} on #{axis}"
     rescue StandardError => e
       return e.message
