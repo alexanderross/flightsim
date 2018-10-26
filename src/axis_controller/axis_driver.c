@@ -8,6 +8,7 @@
 #include <SPI.h>
 #include "nRF24L01.h"
 #include "RF24.h"
+#include <SoftwareSerial.h>
 
 //
 // Hardware configuration
@@ -16,6 +17,8 @@
 // Set up nRF24L01 radio on SPI bus plus pins D4 and D8
 
 RF24 radio(D4,D8);
+
+SoftwareSerial driveSer(D1, D2);
 
 //
 // Topology
@@ -29,7 +32,7 @@ static int ZERO_STOP_PIN = D0;
 // Payload
 //
 
-const int read_payload_size = 10f ;
+const int read_payload_size = 10 ;
 
 int resetrequested = 0;
 
@@ -47,8 +50,8 @@ void setup(void)
 
   pinMode(ZERO_STOP_PIN, INPUT);
 
-  Serial.begin(38400);
-
+  Serial.begin(115200);
+  driveSer.begin(38400);
   //
   // Setup and configure rf radio
   //
@@ -76,6 +79,10 @@ void setup(void)
   //Push an ack out to indicate the axis control is started and listening
   radio.write(ack_msg,2);
   radio.startListening();
+}
+
+void process_message(char message[10]){
+  //If starts with a P
 }
 
 // Get the ASCII message to write value to dest_register on the drive.
@@ -121,7 +128,7 @@ void write_to_register(int dest_register, int value){
   ascii_message[16] = '\n';
   ascii_message[17] = '\0';
 
-  Serial.print(ascii_message);
+  driveSer.print(ascii_message);
 }
 
 void resetposition(){
