@@ -19,11 +19,11 @@ RF24 radio(RPI_V2_GPIO_P1_15, RPI_V2_GPIO_P1_24, BCM2835_SPI_SPEED_8MHZ);
 const uint64_t axispipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
 
 static char rfcfpath[] = "/tmp/rfpath";
-static char rfrsetpath[] = "/tmp/rfrsetpath"; 
+static char rfcmdpath[] = "/tmp/rfcmdpath"; 
 static char panelcfpath[] = "/tmp/panelpath";
 
-static char xactiveflag = 'x';
-static char yactiveflag = 'y';
+static char xactiveflag = 'R';
+static char yactiveflag = 'P';
 
 static uint8_t ROLLACTIVEMASK = 0x40; //01000000 64
 static uint8_t PITCHACTIVEMASK = 0x20;//00100000 32
@@ -112,7 +112,7 @@ uint32_t readfromsharedmem(char * path, int do_clear){
 void readfromcmdmem(){
   char mdata[write_payload_size+1];
   ifstream myfile; 
-  myfile.open("/tmp/rfcmdpath");
+  myfile.open(rfcmdpath);
 
   if(myfile && myfile.is_open()){
 
@@ -121,7 +121,7 @@ void readfromcmdmem(){
       printf("GOT %s\n",mdata);  
       broadcasttocontrollers(mdata);
       myfile.close();
-      remove("/tmp/rfcmdpath");
+      remove(rfcmdpath);
     }
 
   } 

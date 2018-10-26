@@ -21,7 +21,12 @@ class App < Rack::App
   def write_to_drive(axis, register, value)
     #Fine we'll use a damn file
     begin
-      File.open(RFCOMM_CMD_PATH, 'w') { |file| file.write(axis.upcase + sprintf("%03d", register.to_i) + sprintf("%06d", value.to_i)) }
+      #(W)rite to P(i)tch or R(o)ll
+      preamble = "W"+(axis[0] == 'p' ? "I" : "O")
+
+      #This gets passed straight through the RF interface.
+      #W[Axis(1)][Register(3)][Value(5)] for 10b total.
+      File.open(RFCOMM_CMD_PATH, 'w') { |file| file.write(preamble + sprintf("%03d", register.to_i) + sprintf("%05d", value.to_i)) }
       return "Wrote #{value} to #{register} on #{axis}"
     rescue StandardError => e
       return e.message

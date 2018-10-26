@@ -1,3 +1,4 @@
+
 /*
 
  This program is free software; you can redistribute it and/or
@@ -8,13 +9,19 @@
 #include <SPI.h>
 #include "nRF24L01.h"
 #include "RF24.h"
+#include <SoftwareSerial.h>
 
-//
-// Hardware configuration
-//
+
+
+//CHANGE FOR EACH AXIS DAMNIT ---------------------------
+static char ACK_MSG[] = "PI";
+char CMD_AXIS_FLAG = 'I';
+char POS_AXIS_FLAG = 'P';
+// ------------------------------------------------------
+
+SoftwareSerial driveserial(D1, D2);
 
 // Set up nRF24L01 radio on SPI bus plus pins D4 and D8
-
 RF24 radio(D4,D8);
 
 //
@@ -29,13 +36,8 @@ static int ZERO_STOP_PIN = D0;
 // Payload
 //
 
-const int read_payload_size = 10f ;
-
+const int read_payload_size = 10;
 int resetrequested = 0;
-
-//When each is made for the individual axis, each will have a unique ACK
-char ack_msg[] = "OK";
-
 char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating NULL char
 
 void setup(void)
@@ -47,7 +49,10 @@ void setup(void)
 
   pinMode(ZERO_STOP_PIN, INPUT);
 
-  Serial.begin(38400);
+  Serial.begin(115200);
+  
+  pinMode(D2, OUTPUT);
+  driveserial.begin(38400);
 
   //
   // Setup and configure rf radio
@@ -74,8 +79,60 @@ void setup(void)
 
   radio.stopListening();
   //Push an ack out to indicate the axis control is started and listening
-  radio.write(ack_msg,2);
+  radio.write(ACK_MSG,2);
   radio.startListening();
+}
+
+void process_message(char *message){
+  char *payloaditem = message;
+  char buffer[5];
+  //If beginning is W, we want to write
+  if(*payloaditem == 'W'){
+    payloaditem++;
+
+    if(*(payloaditem++) == CMD_AXIS_FLAG){
+      int target, val;
+
+      strncpy(buffer, payloaditem, 3);
+      buffer[3] = '\0';
+      sscanf(buffer, "%d", &target); 
+      
+      payloaditem = payloaditem + 3;
+      strncpy(buffer, payloaditem, 5);
+      buffer[5]= '\0';
+      sscanf(buffer, "%d", &val);
+      
+      printf("WRITING %d to P%d\n", val, target);
+      write_to_register(target, val);
+    }
+  //If beginning is P, it's an instruction. 
+  }else if(*payloaditem == 'P'){
+    //Find the relevant set (Pxxx for pitch, Rxxx for roll)
+    int post_forwarding = 4;
+    if(POS_AXIS_FLAG=='P'){
+      payloaditem++;  
+      //We need this later.
+      post_forwarding = 8;
+    }else{
+      payloaditem = payloaditem + 5;  
+    }
+    
+    int req_position;
+    strncpy(buffer, payloaditem, 3);
+    sscanf(buffer, "%d", &req_position);
+    printf("Movement target is %d\n", req_position);
+    //Jump to the reset value
+    payloaditem = payloaditem + post_forwarding;
+    
+    //Check reset bytes at end (Sx) - if that is true then flip the reset flag and return
+    printf("RESET is %c", *payloaditem);
+    if(*payloaditem == '1'){
+      resetrequested = 1;
+      resetposition();
+    }else{
+      sendposition(req_position);
+    }
+  }
 }
 
 // Get the ASCII message to write value to dest_register on the drive.
@@ -124,12 +181,17 @@ void write_to_register(int dest_register, int value){
   Serial.print(ascii_message);
 }
 
+void sendposition(int pos){
+
+}
+
 void resetposition(){
   //Or put in a speed request here.
 
   while(!digitalRead(ZERO_STOP_PIN)){
     //Keep inching axis drive until we hit the stop.
   }
+  resetrequested = 0;
 }
 
 
@@ -167,7 +229,7 @@ void loop(void)
     radio.stopListening();
 
     // Send the final one back.
-    radio.write(ack_msg, 2 );
+    radio.write(ACK_MSG, 2 );
     Serial.println(F("Sent response."));
 
     // Now, resume listening so we catch the next packets.
