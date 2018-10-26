@@ -1,6 +1,7 @@
 require 'rack/app'
-require 'inline'
-require 'fiddle'
+
+RFCOMM_CMD_PATH = "/tmp/rfcmdpath"
+
 
 class App < Rack::App
 
@@ -18,41 +19,13 @@ class App < Rack::App
 
 
   def write_to_drive(axis, register, value)
-    #TODO - get this into shared mem to be picked up by the rfaxiscomm program
+    #Fine we'll use a damn file
     begin
-      ShmemWriter.write(axis, register, axis)
+      File.open(yourfile, 'w') { |file| file.write(axis.upcase + sprintf("%03d", register.to_i) + sprintf("%06d", value.to_i)) }
       return "Wrote #{value} to #{register} on #{axis}"
     rescue StandardError => e
       return e.message
     end
   end
 
-end
-
-class ShmemWriter
-  inline do |builder|
-    builder.include '<sys/types.h>'
-    builder.include '<sys/ipc.h>'
-    builder.include '<sys/shm.h>'
-    builder.c 'int getShmid(int key) {
-      return shmget(key, 256, 0644 | IPC_CREAT);
-    }'
-    builder.c 'int getMem(int id) {
-      return shmat(id, NULL, 0);
-    }'
-    builder.c 'int removeMem(long id) {
-      return shmdt(id);
-    }'
-  end
-
-  def self.write(axis, register, value)
-    basic_id = self.new.getShmid(1337)
-    address = self.new.getMem(basic_id)
-    puts "ADDRESS #{address}"
-    pointer = Fiddle::Pointer.new(address, 256)
-
-    string = axis.upcase + sprintf("%03d", register.to_i) + sprintf("%06d", value.to_i)
-    second_pointer = Fiddle::Pointer.new(string.object_id << 1)
-    pointer = second_pointer
-  end
 end

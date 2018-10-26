@@ -8,6 +8,7 @@ echo "Placing FTOK files"
 echo "SR" > /tmp/serpath
 echo "PN" > /tmp/panelpath
 echo "RF" > /tmp/rfpath
+echo "" > /tmp/rfcmdpath
 
 echo "Compiling GPIO panel executable"
 gcc $FS_BASE/gpioctrl.c -o $FS_BASE/gpio-panel -lwiringPi
