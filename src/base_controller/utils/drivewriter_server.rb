@@ -51,7 +51,7 @@ class ShmemWriter
     pointer = Fiddle::Pointer.new(address, 256)
 
     string = axis.upcase + sprintf("%03d", register.to_i) + sprintf("%06d", value.to_i)
-    second_pointer = Fiddle::Pointer.new(string.object_id)
+    second_pointer = Fiddle::Pointer.new(string.object_id << 1)
     pointer = second_pointer
   end
 end

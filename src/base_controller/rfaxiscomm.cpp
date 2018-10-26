@@ -110,17 +110,17 @@ uint32_t readfromsharedmem(char * path, int do_clear){
 //This is dirty, but it does what it needs to do.
 void readfromcmdmem(){
   char *address[10];
+
   int basicId = shmget(1337, 256, 0644 | IPC_CREAT);
   address[0] = (char *) shmat(basicId, 0, 0);
-  getchar();
   char *s[10];
   int i;
   
-  s[0] = address[0];
+  s = address;
 
-  if(strlen(*s) != 0){
-    printf(*s);
-    printf("\0\n");
+  if(strlen(s) != 0){
+    printf("%s\n", s);
+    strncpy(s, "", 256);
   }
 
   shmdt(address);
