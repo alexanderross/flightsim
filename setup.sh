@@ -27,6 +27,10 @@ cd RF24
 ./configure --driver=SPIDEV
 sudo make install -B
 
+echo "Installing ruby for API"
+sudo apt-get install ruby2.3-dev
+gem install rack-app
+
 echo "Installing Flight Sim Drivers"
 cd /home/pi
 git clone https://github.com/alexanderross/flightsim.git

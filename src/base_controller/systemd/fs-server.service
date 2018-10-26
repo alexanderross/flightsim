@@ -1,0 +1,12 @@
+[Unit]
+Description=Rack server for setting registers and whatnot
+After=fs-build.service
+
+[Service]
+WorkingDirectory=/home/pi/flightsim/src/base_controller/utils
+ExecStart=rackup -o 0.0.0.0 -p 9090
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

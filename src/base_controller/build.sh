@@ -22,3 +22,5 @@ g++ $FS_BASE/rfaxiscomm.cpp -lrf24 -o $FS_BASE/rf24-comm
 echo "Compiling debugging memory writer"
 gcc $FS_BASE/utils/writetosharedmem.c -o $FS_BASE/utils/memwt
 
+rm /tmp/fs-build-active
+
