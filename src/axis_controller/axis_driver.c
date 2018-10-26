@@ -24,6 +24,8 @@ SoftwareSerial driveserial(D1, D2);
 // Set up nRF24L01 radio on SPI bus plus pins D4 and D8
 RF24 radio(D4,D8);
 
+SoftwareSerial driveSer(D1, D2);
+
 //
 // Topology
 //
@@ -36,7 +38,9 @@ static int ZERO_STOP_PIN = D0;
 // Payload
 //
 
+
 const int read_payload_size = 10;
+
 int resetrequested = 0;
 char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating NULL char
 
@@ -178,7 +182,7 @@ void write_to_register(int dest_register, int value){
   ascii_message[16] = '\n';
   ascii_message[17] = '\0';
 
-  Serial.print(ascii_message);
+  driveSer.print(ascii_message);
 }
 
 void sendposition(int pos){
