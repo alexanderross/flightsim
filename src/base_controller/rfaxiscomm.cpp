@@ -46,6 +46,7 @@ void broadcasttocontrollers(char broadcaststr[write_payload_size+1]){
   radio.openWritingPipe(currentwriteypipe);
 
   radio.write(broadcaststr, write_payload_size);
+  printf("WROTE %s \n", broadcaststr);
 
   radio.startListening();
 }
@@ -109,21 +110,21 @@ uint32_t readfromsharedmem(char * path, int do_clear){
 
 //This is dirty, but it does what it needs to do.
 void readfromcmdmem(){
-  char *address;
+  char mdata[write_payload_size+1];
+  ifstream myfile; 
+  myfile.open("/tmp/rfcmdpath");
 
-  int basicId = shmget(1337, 256, 0644 | IPC_CREAT);
-  address = (char *) shmat(basicId, NULL, 0);
-  char *s;
-  int i;
-  
-  s = address;
+  if(myfile && myfile.is_open()){
 
-  if(strlen(s) != 0){
-    printf("%s\n", s);
-    strncpy(s, "", 256);
-  }
+    if(myfile.peek() != std::ifstream::traits_type::eof()){   
+      myfile.getline(mdata,write_payload_size+1);
+      printf("GOT %s\n",mdata);  
+      broadcasttocontrollers(mdata);
+      myfile.close();
+      remove("/tmp/rfcmdpath");
+    }
 
-  shmdt(address);
+  } 
 }
 
 void fetchandbroadcast(){
@@ -185,7 +186,7 @@ int main(int argc, char** argv) {
 
   radio.startListening();
 
-// forever loop
+// forever aloop
   while (1)
   {
 
@@ -211,5 +212,3 @@ int main(int argc, char** argv) {
 
   }
 }
-
-
