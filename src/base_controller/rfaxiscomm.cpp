@@ -128,12 +128,16 @@ void readfromcmdmem(){
     char *buff_ptr;
 
     buff_ptr = inbuffer;
-    while(*buff_ptr != "\0"){
-      cmdbuffer[pos] = *buff_ptr;
-      if(inbuffer == CMD_MEM_SEP){
+    while(true){
+      if(*buff_ptr == CMD_MEM_SEP){
         broadcasttocontrollers(cmdbuffer);
         pos = 0;
       }
+      if(*buff_ptr != '\0'){
+        break;
+      }
+      cmdbuffer[pos] = *buff_ptr;
+
       pos++;
       buff_ptr++;
     }
