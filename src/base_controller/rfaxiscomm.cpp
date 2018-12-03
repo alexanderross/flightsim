@@ -28,6 +28,8 @@ static char panelcfpath[] = "/tmp/panelpath";
 static char xactiveflag = 'R';
 static char yactiveflag = 'P';
 
+static char CMD_MEM_SEP = '-'
+
 static uint8_t ROLLACTIVEMASK = 0x40; //01000000 64
 static uint8_t PITCHACTIVEMASK = 0x20;//00100000 32
 
@@ -35,8 +37,6 @@ const int write_payload_size = 10;
 const int read_payload_size = 2;
 
 int resetrequested = 0;
-
-int rf_cmd_desc;
 
 char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating NULL char
 
@@ -115,14 +115,28 @@ uint32_t readfromsharedmem(char * path, int do_clear){
 
 //This is dirty, but it does what it needs to do.
 void readfromcmdmem(){
+  int rf_cmd_desc = open(rfcmdpath , O_RDONLY,O_NONBLOCK);
   char inbuffer[255];
 
-  int bytes_read = read( rf_cmd_desc, inbuffer, 255);
+  int bytes_read = read(rf_cmd_desc, inbuffer, 255);
 
   if( bytes_read > 0){
-    printf("GOT %s\n",inbuffer);  
-    broadcasttocontrollers(inbuffer);
+    printf("GOT %s\n",inbuffer); 
+
+    int pos = 0;
+    char *cmdbuffer;
+    while(inbuffer != "\0"){
+      cmdbuffer[i] = inbuffer;
+      if(inbuffer == CMD_MEM_SEP){
+        broadcasttocontrollers(cmdbuffer);
+      }
+      pos++;
+      inbuffer++;
+    }
+    close(rf_cmd_desc);
   }
+  rf_cmd_desc = 0;
+  bytes_read = 0;
 
 }
 
@@ -184,8 +198,6 @@ int main(int argc, char** argv) {
   radio.openReadingPipe(1, axispipes[1]);
 
   radio.startListening();
-
-  rf_cmd_desc = open(rfcmdpath , O_RDONLY,O_NONBLOCK);
 
 // forever aloop
   while (1)

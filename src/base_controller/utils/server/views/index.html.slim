@@ -1,29 +1,46 @@
 javascript:
 
+  function handleResponse(Http){
+    if(Http.status == 500){
+      document.getElementById("errmsg").innerHTML = Http.responseText;
+      document.getElementById("err_message_ctr").setAttribute("class","is-visible")
+    }else{
+      document.getElementById("err_message_ctr").setAttribute("class","")
+    } 
+    console.log(Http.responseText)
+  }
+
   function sendValue(axis, dest, val){
     const Http = new XMLHttpRequest();
     const url="/write?axis="+axis+"&r="+dest+"&v="+val;
     Http.open("POST", url);
     Http.send();
     Http.onreadystatechange=(e)=>{
-      console.log(Http);
-      if(Http.status == 500){
-        document.getElementById("errmsg").innerHTML = Http.responseText;
-        document.getElementById("err_message_ctr").setAttribute("class","is-visible")
-      }else{
-        document.getElementById("err_message_ctr").setAttribute("class","")
-      } 
-      console.log(Http.responseText)
+      handleResponse(Http);
+    }
+  }
+
+  function sendDualValue(rdest, rval, pdest, pval){
+    const Http = new XMLHttpRequest();
+    const url="/write_dual?pc="+pdest+"|"+pval+"&rc="+rdest+"|"+rval;
+    Http.open("POST", url);
+    Http.send();
+    Http.onreadystatechange=(e)=>{
+      handleResponse(Http);
     }
   }
 
   function resetAxis(axis){
-    if(axis == "r" || axis == "a"){
+    if(axis == "r"){
       sendValue("roll",220,1);
     }
 
-    if(axis == "p" || axis == "a"){
+    if(axis == "p"){
       sendValue("pitch",220,1);
+    }
+
+    if(axis == "a"){
+      sendDualValue(220,1,220,1);
     }
   }
 
@@ -115,8 +132,7 @@ javascript:
     document.getElementById("sprd-pitch").innerHTML = final_pitch_spd;
     document.getElementById("sprd-roll").innerHTML = final_roll_spd;
 
-    sendSpeed("roll", final_roll_spd);
-    sendSpeed("pitch", final_pitch_spd);
+    sendDualValue(221, final_roll_spd, 221, final_pitch_spd);
   }
 
   var box = document.getElementById("speedslider");
