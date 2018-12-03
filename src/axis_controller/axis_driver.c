@@ -14,9 +14,9 @@
 
 
 //CHANGE FOR EACH AXIS DAMNIT ---------------------------
-static char ACK_MSG[] = "PI";
-char CMD_AXIS_FLAG = 'I';
-char POS_AXIS_FLAG = 'P';
+static char ACK_MSG[] = "RO";
+char CMD_AXIS_FLAG = 'O';
+char POS_AXIS_FLAG = 'R';
 // ------------------------------------------------------
 
 SoftwareSerial driveserial(D1, D2);
@@ -24,7 +24,6 @@ SoftwareSerial driveserial(D1, D2);
 // Set up nRF24L01 radio on SPI bus plus pins D4 and D8
 RF24 radio(D4,D8);
 
-SoftwareSerial driveSer(D1, D2);
 
 //
 // Topology
@@ -83,7 +82,11 @@ void setup(void)
 
   radio.stopListening();
   //Push an ack out to indicate the axis control is started and listening
+  delay(1000);
   radio.write(ACK_MSG,2);
+  write_to_register(75, 1);
+  delay(3000);
+  write_to_register(75, 0);
   radio.startListening();
 }
 
@@ -99,14 +102,18 @@ void process_message(char *message){
 
       strncpy(buffer, payloaditem, 3);
       buffer[3] = '\0';
-      sscanf(buffer, "%d", &target); 
+
+      char *tptr;
+      target = strtol(buffer, &tptr,10);
       
       payloaditem = payloaditem + 3;
       strncpy(buffer, payloaditem, 5);
       buffer[5]= '\0';
-      sscanf(buffer, "%d", &val);
+
+      char *pptr;
+      val = strtol(buffer, &pptr, 10);
       
-      printf("WRITING %d to P%d\n", val, target);
+      Serial.printf("WRITING %d to P%d\n", val, target);
       write_to_register(target, val);
     }
   //If beginning is P, it's an instruction. 
@@ -123,13 +130,14 @@ void process_message(char *message){
     
     int req_position;
     strncpy(buffer, payloaditem, 3);
-    sscanf(buffer, "%d", &req_position);
-    printf("Movement target is %d\n", req_position);
+    char *posptr;
+    req_position = strtol(buffer, &posptr, 10);
+    Serial.printf("Movement target is %d\n", req_position);
     //Jump to the reset value
     payloaditem = payloaditem + post_forwarding;
     
     //Check reset bytes at end (Sx) - if that is true then flip the reset flag and return
-    printf("RESET is %c", *payloaditem);
+    Serial.printf("RESET is %c", *payloaditem);
     if(*payloaditem == '1'){
       resetrequested = 1;
       resetposition();
@@ -163,10 +171,10 @@ void write_to_register(int dest_register, int value){
   int iter = 6;
 
   while (iter--) {
-      lrc += message[iter+1];
+      lrc += message[iter];
   }
   
-  lrc = (-lrc) - 1;
+  lrc = (-lrc);
   message[6] = lrc;
   
   char ascii_message[18];
@@ -182,7 +190,8 @@ void write_to_register(int dest_register, int value){
   ascii_message[16] = '\n';
   ascii_message[17] = '\0';
 
-  driveSer.print(ascii_message);
+  Serial.printf("Writing %d to %d as %s \n", value, dest_register, ascii_message);
+  driveserial.print(ascii_message);
 }
 
 void sendposition(int pos){
@@ -228,6 +237,7 @@ void loop(void)
     //That's a big todo
 
     // Parse out that reset signal too
+    process_message(receive_payload);
 
     // First, stop listening so we can talk
     radio.stopListening();
