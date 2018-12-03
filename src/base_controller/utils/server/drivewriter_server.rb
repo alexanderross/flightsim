@@ -1,6 +1,7 @@
 require 'rack/app'
 require 'slim'
 require 'tilt'
+require 'timeout' #So what, I used timeout :D
 
 RFCOMM_CMD_PATH = "/tmp/rfcmdpath"
 
@@ -14,6 +15,8 @@ SETUP_SEQUENCE = [
   [51, 1500]
 ]
 
+File.mkfifo(RFCOMM_CMD_PATH) unless File.exist?(RFCOMM_CMD_PATH)
+
 
 class App < Rack::App
 
@@ -26,7 +29,11 @@ class App < Rack::App
 
   post '/write' do
     axis = process_axis(params)
-    write_to_drive(axis, params['r'], params['v'])
+    msg, success = write_to_drive(axis, params['r'], params['v'])
+    response.status = 500 unless success
+
+    msg
+
   end
 
   get '/' do
@@ -56,10 +63,20 @@ class App < Rack::App
 
       #This gets passed straight through the RF interface.
       #W[Axis(1)][Register(3)][Value(5)] for 10b total.
-      File.open(RFCOMM_CMD_PATH, 'w') { |file| file.write(preamble + sprintf("%03d", register.to_i) + sprintf("%05d", value.to_i)) }
-      return "Wrote #{value} to #{register} on #{axis}"
+
+      #10ms timeout
+      Timeout::timeout(1/100.0) {
+        File.open(RFCOMM_CMD_PATH, 'w') do |f| 
+            f.write(preamble + sprintf("%03d", register.to_i) + sprintf("%05d", value.to_i)+"\0")
+        end
+        puts "?"
+      }
+
+      return ["Wrote #{value} to #{register} on #{axis}", true]
+    rescue TimeoutError => e
+      return ["Write timed out - RFCOMM program likely not up or is slow AF.", false]
     rescue StandardError => e
-      return e.message
+      return [e, false]
     end
   end
 

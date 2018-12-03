@@ -6,6 +6,13 @@ javascript:
     Http.open("POST", url);
     Http.send();
     Http.onreadystatechange=(e)=>{
+      console.log(Http);
+      if(Http.status == 500){
+        document.getElementById("errmsg").innerHTML = Http.responseText;
+        document.getElementById("err_message_ctr").setAttribute("class","is-visible")
+      }else{
+        document.getElementById("err_message_ctr").setAttribute("class","")
+      } 
       console.log(Http.responseText)
     }
   }
@@ -27,7 +34,10 @@ html
     link rel='stylesheet' type='text/css' href='https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css'
   body
     .section.has-background-light
-      .columns
+      .columns#err_message_ctr
+        .column.is-full
+          .notification.is-danger#errmsg Something done fucked up
+      .columns.is-mobile
         .column.is-one-third-desktop.is-full-mobile
           .box
             .columns
@@ -190,6 +200,42 @@ css:
     width:250px;
     position: absolute;
     top: 125px;
+  }
+
+  @keyframes fadeOut {
+      0% {
+          opacity: 1;
+      }
+      80% {
+         opacity: 1
+      }
+      100% {
+         opacity: 0;
+      }
+  }
+
+  @-webkit-keyframes fadeOut {
+      0% {
+          opacity: 1;
+      }
+      80% {
+          opacity: 1;
+      }
+      100% {
+         opacity: 0;
+      }
+  }
+
+  #err_message_ctr {
+    opacity: 0;
+    height:0px;
+    transition: height 350ms ease-in-out, opacity 750ms ease-in-out;
+  }
+
+  #err_message_ctr.is-visible {
+    display: block;
+    height: auto;
+    opacity: 1;
   }
 
 

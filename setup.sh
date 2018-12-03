@@ -21,7 +21,7 @@ sudo make install -B
 
 echo "Installing ruby for API"
 sudo apt-get --yes --force-yes install ruby2.3-dev
-gem install rack-app --no-rdoc --no-ri
+gem install bundler --no-rdoc --no-ri
 
 echo "Installing Flight Sim Drivers"
 cd /home/pi

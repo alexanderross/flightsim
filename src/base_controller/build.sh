@@ -3,12 +3,12 @@
 touch /tmp/fs-build-active
 export FS_BASE=/home/pi/flightsim/src/base_controller
 
-echo "Placing FTOK files"
+echo "Placing FTOK files and cleaning up existing shared pipes"
 
 echo "SR" > /tmp/serpath
 echo "PN" > /tmp/panelpath
 echo "RF" > /tmp/rfpath
-echo "" > /tmp/rfcmdpath
+rm -rf /tmp/rfcmdpath
 
 echo "Compiling GPIO panel executable"
 gcc $FS_BASE/gpioctrl.c -o $FS_BASE/gpio-panel -lwiringPi

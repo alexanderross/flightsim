@@ -3,6 +3,8 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <fcntl.h>
+#include <stdio.h> 
 #include <RF24/RF24.h>
 #include <sys/shm.h>
 
@@ -32,6 +34,8 @@ const int write_payload_size = 10;
 const int read_payload_size = 2;
 
 int resetrequested = 0;
+
+int rf_cmd_desc = open( "/tmp/rfcmdpath", O_RDONLY,O_NONBLOCK);
 
 char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating NULL char
 
@@ -110,21 +114,15 @@ uint32_t readfromsharedmem(char * path, int do_clear){
 
 //This is dirty, but it does what it needs to do.
 void readfromcmdmem(){
-  char mdata[write_payload_size+1];
-  ifstream myfile; 
-  myfile.open(rfcmdpath);
+  char inbuffer[255];
 
-  if(myfile && myfile.is_open()){
+  int bytes_read = read( rf_cmd_desc, inbuffer, 255);
 
-    if(myfile.peek() != std::ifstream::traits_type::eof()){   
-      myfile.getline(mdata,write_payload_size+1);
-      printf("GOT %s\n",mdata);  
-      broadcasttocontrollers(mdata);
-      myfile.close();
-      remove(rfcmdpath);
-    }
+  if( bytes_read > 0){
+    printf("GOT %s\n",inbuffer);  
+    broadcasttocontrollers(inbuffer);
+  }
 
-  } 
 }
 
 void fetchandbroadcast(){
