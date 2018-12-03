@@ -134,6 +134,7 @@ void readfromcmdmem(){
         pos = 0;
       }
       if(*buff_ptr != '\0'){
+        broadcasttocontrollers(cmdbuffer);
         break;
       }
       cmdbuffer[pos] = *buff_ptr;
