@@ -28,7 +28,7 @@ static char panelcfpath[] = "/tmp/panelpath";
 static char xactiveflag = 'R';
 static char yactiveflag = 'P';
 
-static char CMD_MEM_SEP = '-'
+static char CMD_MEM_SEP = '-';
 
 static uint8_t ROLLACTIVEMASK = 0x40; //01000000 64
 static uint8_t PITCHACTIVEMASK = 0x20;//00100000 32
@@ -124,14 +124,18 @@ void readfromcmdmem(){
     printf("GOT %s\n",inbuffer); 
 
     int pos = 0;
-    char *cmdbuffer;
-    while(inbuffer != "\0"){
-      cmdbuffer[i] = inbuffer;
+    char cmdbuffer[10];
+    char *buff_ptr;
+
+    buff_ptr = inbuffer;
+    while(*buff_ptr != "\0"){
+      cmdbuffer[pos] = *buff_ptr;
       if(inbuffer == CMD_MEM_SEP){
         broadcasttocontrollers(cmdbuffer);
+        pos = 0;
       }
       pos++;
-      inbuffer++;
+      buff_ptr++;
     }
     close(rf_cmd_desc);
   }
