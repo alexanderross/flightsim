@@ -197,8 +197,6 @@ int main(int argc, char** argv) {
 
       handleresponse(response);
 
-      //temporary3
-      setgpioflags(1,1);
 
       // Spew it
       printf("Got response size=%i value=%s\n\r", read_payload_size, response);

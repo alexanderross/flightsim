@@ -13,11 +13,19 @@
 
 
 
-//CHANGE FOR EACH AXIS DAMNIT ---------------------------
-static char ACK_MSG[] = "RO";
-char CMD_AXIS_FLAG = 'O';
-char POS_AXIS_FLAG = 'R';
-// ------------------------------------------------------
+
+//CHANGE FOR EACH AXIS DAMNIT 
+// PITCH---------------------------
+static char ACK_MSG[] = "P";
+static char CMD_AXIS_FLAG = 'I';
+static char POS_AXIS_FLAG = 'P';
+static char GEAR_REDUCTION = 40;
+// ROLL ---------------------------
+static char ACK_MSG[] = "R";
+static char CMD_AXIS_FLAG = 'O';
+static char POS_AXIS_FLAG = 'R';
+static char GEAR_REDUCTION = 30;
+// 
 
 SoftwareSerial driveserial(D1, D2);
 
@@ -25,30 +33,22 @@ SoftwareSerial driveserial(D1, D2);
 RF24 radio(D4,D8);
 
 
-//
-// Topology
-//
-
 // Radio pipe addresses for the 2 nodes to communicate x and y share them.
 const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
 static int ZERO_STOP_PIN = D0;
 
-//
-// Payload
-//
-
-
 const int read_payload_size = 10;
-
-int resetrequested = 0;
 char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating NULL char
+
+//Reset flags
+int resetrequested = 0;
+int resetcomplete = 0;
+
+uint16_t last_req_speed = 0;
+
 
 void setup(void)
 {
-
-  //
-  // Print preamble
-  //
 
   pinMode(ZERO_STOP_PIN, INPUT);
 
@@ -60,7 +60,6 @@ void setup(void)
   //
   // Setup and configure rf radio
   //
-
   radio.begin();
 
   // enable dynamic payloads
@@ -80,13 +79,19 @@ void setup(void)
 
   radio.printDetails();
 
-  radio.stopListening();
   //Push an ack out to indicate the axis control is started and listening
+  ack_message();
   delay(1000);
-  radio.write(ACK_MSG,2);
+
+  //Cycle the fan.
   write_to_register(75, 1);
   delay(3000);
   write_to_register(75, 0);
+}
+
+void ack_message(){
+  radio.stopListening();
+  radio.write(ACK_MSG,1);
   radio.startListening();
 }
 
@@ -114,7 +119,7 @@ void process_message(char *message){
       val = strtol(buffer, &pptr, 10);
       
       Serial.printf("WRITING %d to P%d\n", val, target);
-      write_to_register(target, val);
+      process_cmd(target, val);
     }
   //If beginning is P, it's an instruction. 
   }else if(*payloaditem == 'P'){
@@ -132,17 +137,20 @@ void process_message(char *message){
     strncpy(buffer, payloaditem, 3);
     char *posptr;
     req_position = strtol(buffer, &posptr, 10);
+
     Serial.printf("Movement target is %d\n", req_position);
     //Jump to the reset value
     payloaditem = payloaditem + post_forwarding;
     
     //Check reset bytes at end (Sx) - if that is true then flip the reset flag and return
     Serial.printf("RESET is %c", *payloaditem);
-    if(*payloaditem == '1'){
+
+    if(*payloaditem == '1' && !resetcomplete){
       resetrequested = 1;
       resetposition();
     }else{
       sendposition(req_position);
+      resetcomplete = 0;
     }
   }
 }
@@ -156,6 +164,23 @@ static char nibble_to_hex_ascii(uint8_t nibble) {
         c = nibble - 10 + 'A';
     }
     return c;
+}
+
+void process_cmd(int destination, int value){
+  if(destination >= 220){
+    //This is a fancy command that we process here.
+    if(destination == 220){
+      //220 - Manual Reset
+      resetposition();
+    }else if(destination == 221){
+      send_speed_command(value);
+    }else if(destination == 222){
+    //222 - Move to position N*2
+    }
+
+  }else{
+    write_to_register(destination, value);
+  }
 }
 
 void write_to_register(int dest_register, int value){
@@ -194,8 +219,36 @@ void write_to_register(int dest_register, int value){
   driveserial.print(ascii_message);
 }
 
-void sendposition(int pos){
+void send_speed_command(int requested_speed){
+    if(last_req_speed != requested_speed){
+      //Write the speed to ISR2
+      write_to_register(170, requested_speed);
 
+      //Form the command to run ISR2
+      uint32_t command = 0x01;
+      //set speed to req #
+      command = command | (1 << 8);
+      write_to_register(69, 0);
+      write_to_register(68, command);
+    }
+}
+
+void sendposition(int pos){
+  //Write the position to IP1
+  int rpos = 0;
+
+  float rpos = (2500/360.0) * pos * GEAR_REDUCTION;
+
+  write_to_register(122, rpos/10000);
+  write_to_register(123, rpos % 10000);
+
+  //Form the command to run POS1
+  uint32_t command = 0x01;
+  //set speed to req #
+  command = command | (1 << 8);
+  write_to_register(68, 0);
+  write_to_register(69, command);
+  
 }
 
 void resetposition(){
@@ -205,6 +258,9 @@ void resetposition(){
     //Keep inching axis drive until we hit the stop.
   }
   resetrequested = 0;
+
+  //We check this flag above to avoid continually entering the reset position loop.
+  resetcomplete = 1;
 }
 
 
@@ -225,7 +281,7 @@ void loop(void)
     radio.read( receive_payload, len );
 
     // Put a zero at the end for easy printing
-    receive_payload[len] = 0;
+    receive_payload[len] = '\0';
 
     // Spew it
     Serial.print(F("Got response size="));
@@ -243,7 +299,7 @@ void loop(void)
     radio.stopListening();
 
     // Send the final one back.
-    radio.write(ACK_MSG, 2 );
+    ack_message();
     Serial.println(F("Sent response."));
 
     // Now, resume listening so we catch the next packets.
