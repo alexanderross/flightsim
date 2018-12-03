@@ -19,5 +19,7 @@ install_fs_svc fs-ser-comm
 install_fs_svc fs-rf24-comm
 install_fs_svc fs-server
 
-cd $FS_BASE/server
+systemctl daemon-reload
+
+cd $FS_BASE/utils/server
 bundle install

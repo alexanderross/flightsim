@@ -5,6 +5,7 @@
 #include <string>
 #include <fcntl.h>
 #include <stdio.h> 
+#include <unistd.h> 
 #include <RF24/RF24.h>
 #include <sys/shm.h>
 
@@ -35,7 +36,7 @@ const int read_payload_size = 2;
 
 int resetrequested = 0;
 
-int rf_cmd_desc = open( "/tmp/rfcmdpath", O_RDONLY,O_NONBLOCK);
+int rf_cmd_desc;
 
 char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating NULL char
 
@@ -183,6 +184,8 @@ int main(int argc, char** argv) {
   radio.openReadingPipe(1, axispipes[1]);
 
   radio.startListening();
+
+  rf_cmd_desc = open(rfcmdpath , O_RDONLY,O_NONBLOCK);
 
 // forever aloop
   while (1)
