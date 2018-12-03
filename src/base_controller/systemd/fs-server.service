@@ -3,7 +3,7 @@ Description=Rack server for setting registers and whatnot
 After=fs-build.service
 
 [Service]
-WorkingDirectory=/home/pi/flightsim/src/base_controller/utils
+WorkingDirectory=/home/pi/flightsim/src/base_controller/utils/server
 ExecStart=/usr/local/bin/rackup -o 0.0.0.0 -p 9090
 Restart=on-failure
 RestartSec=30

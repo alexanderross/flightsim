@@ -1,4 +1,6 @@
 require 'rack/app'
+require 'slim'
+require 'tilt'
 
 RFCOMM_CMD_PATH = "/tmp/rfcmdpath"
 
@@ -28,7 +30,7 @@ class App < Rack::App
   end
 
   get '/' do
-    "I'm Alright"
+    Tilt.new("views/index.html.slim").render;
   end
 
   post '/setup' do 

@@ -1,0 +1,198 @@
+javascript:
+
+  function sendValue(axis, dest, val){
+    const Http = new XMLHttpRequest();
+    const url="/write?axis="+axis+"&r="+dest+"&v="+val;
+    Http.open("POST", url);
+    Http.send();
+    Http.onreadystatechange=(e)=>{
+      console.log(Http.responseText)
+    }
+  }
+
+  function resetAxis(axis){
+    if(axis == "r" || axis == "a"){
+      sendValue("roll",220,1);
+    }
+
+    if(axis == "p" || axis == "a"){
+      sendValue("pitch",220,1);
+    }
+  }
+
+
+html
+  head
+    title Flight Sim Control Panel
+    link rel='stylesheet' type='text/css' href='https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css'
+  body
+    .section.has-background-light
+      .columns
+        .column.is-one-third-desktop.is-full-mobile
+          .box
+            .columns
+              .column.is-full
+                b.is-size-3 Axis Speed Control
+                p Control the current speed of each axis.
+            .columns
+              .column.is-full
+                .box#spsldctr
+                  #speedslider
+                    #vline
+                    #hline
+                    #speeddot
+                #speedreadout
+                  span Pitch:
+                  b#sprd-pitch.cnum 0
+                  span RPM
+                  span#sprdspc
+                  span Roll:
+                  b#sprd-roll.cnum 0 
+                  span RPM
+
+            .columns
+              .column.is-full
+                a.button.is-medium#zreset Reset to Zero
+        .column.is-one-third-desktop.is-full-mobile
+          .box 
+            .columns
+              .column.is-full
+                b.is-size-3 Reset
+            .columns
+              .column.is-full
+                a.button.is-medium onclick="resetAxis('p');" Reset Pitch Axis
+            .columns
+              .column.is-full
+                a.button.is-medium onclick="resetAxis('r');" Reset Roll Axis
+            .columns
+              .column.is-full
+                a.button.is-medium onclick="resetAxis('a');" Reset both Axes
+
+        .column.is-one-third-desktop.is-full-mobile
+          .box 
+            .columns
+              .column.is-full
+                b.is-size-3 Send Value
+                p Write a value to a drive's register
+            .columns
+              .column.is-full
+                span.is-size-5 Axis
+                br
+                .select
+                  select#caxis
+                    option value="pitch" Pitch
+                    option value="roll" Roll
+            .columns
+              .column.is-full
+                span.is-size-5 Register
+                input#cdest class="input" type="text" placeholder="1-219"
+            .columns
+              .column.is-full
+                span.is-size-5 Value
+                input#cval class="input" type="text" placeholder="less than 32k"
+            .columns
+              .column.is-full
+                a.button.is-medium#sendcmd Send
+
+javascript:
+
+
+  function sendSpeed(axis, speed){
+    sendValue(axis, 221, speed);
+  }
+
+  function setSpeeds(final_roll_spd, final_pitch_spd){
+    document.getElementById("sprd-pitch").innerHTML = final_pitch_spd;
+    document.getElementById("sprd-roll").innerHTML = final_roll_spd;
+
+    sendSpeed("roll", final_roll_spd);
+    sendSpeed("pitch", final_pitch_spd);
+  }
+
+  var box = document.getElementById("speedslider");
+  box.addEventListener("mouseup", function(evt, obj){
+    var bndbx = box.getBoundingClientRect();
+    var roll = evt.clientX - bndbx.left - (bndbx.width /2);
+    var pitch = evt.clientY - bndbx.top - (bndbx.height /2);
+
+    var max_roll_spd = 1200;
+    var max_pitch_spd = 1200;
+
+    var final_roll_spd = Math.round((max_roll_spd / (bndbx.width/2)) * roll);
+    var final_pitch_spd = - Math.round((max_pitch_spd / (bndbx.height/2)) * pitch);
+
+    setSpeeds(final_roll_spd, final_pitch_spd);
+
+    document.getElementById("speeddot").setAttribute("style", "left:"+ (evt.clientX - bndbx.left - 15) +"px; top: "+ (evt.clientY - bndbx.top - 15) +"px;");
+
+  });
+
+  document.getElementById("zreset").addEventListener("click", function(evt){
+    setSpeeds(0,0);
+    document.getElementById("speeddot").setAttribute("style", "left:110px; top:110px;");
+  });
+
+  document.getElementById("sendcmd").addEventListener("click", function(evt){
+    var axis = document.getElementById("caxis").options[document.getElementById("caxis").selectedIndex].value;
+    var dest = document.getElementById("cdest").value;
+    var val = document.getElementById("cval").value;
+    sendValue(axis, dest, val);
+  });
+
+
+
+
+  
+css:
+  #sprdspc{
+    margin-left:15px;
+  }
+
+  #spsldctr{
+    margin-bottom: 0px;
+    text-align: center;
+  }
+
+  #speedslider{
+    height: 250px;
+    width: 250px;
+    border: 1px solid #AAA;
+    border-radius: 5px;
+    position: relative;
+  }
+
+  #speeddot{
+    height: 30px;
+    width: 30px;
+    background-color: #BADA55;
+    border: 1px solid #BADA55;
+    position: absolute;
+    left: 110px;
+    top: 110px;
+    border-radius: 15px;
+  }
+
+  .cnum{
+    margin-right: 5px;
+  }
+
+  #vline{
+    border-right: 1px solid #DDD;
+    height:250px;
+    width:1px;
+    position: absolute;
+    left: 125px;
+  }
+
+  #hline{
+    border-top: 1px solid #DDD;
+    height:1px;
+    width:250px;
+    position: absolute;
+    top: 125px;
+  }
+
+
+
+
+
