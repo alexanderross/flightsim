@@ -4,7 +4,7 @@ require 'tilt'
 require 'timeout' #So what, I used timeout :D
 
 RFCOMM_CMD_PATH = "/tmp/rfcmdpath"
-CMD_JOIN_CHR= "-"
+CMD_JOIN_CHR= "$"
 
 #The registers and values needed to ensure a drive is properly set up for the sim. Applies to both axes. One would argue this isn't necessary,
 # as if the drive is not configured it will not be able to communicate with the axis controller. But they just haters. 

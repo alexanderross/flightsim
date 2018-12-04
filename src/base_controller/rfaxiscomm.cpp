@@ -28,7 +28,7 @@ static char panelcfpath[] = "/tmp/panelpath";
 static char xactiveflag = 'R';
 static char yactiveflag = 'P';
 
-static char CMD_MEM_SEP = '-';
+static char CMD_MEM_SEP = '$';
 
 static uint8_t ROLLACTIVEMASK = 0x40; //01000000 64
 static uint8_t PITCHACTIVEMASK = 0x20;//00100000 32
