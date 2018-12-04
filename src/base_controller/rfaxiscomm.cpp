@@ -133,13 +133,13 @@ void readfromcmdmem(){
         cmdbuffer[pos+1] = '\0';
         broadcasttocontrollers(cmdbuffer);
         pos = 0;
-      }
-      if(*buff_ptr == '\0'){
+      } else if(*buff_ptr == '\0'){
         cmdbuffer[pos+1] = '\0';
         broadcasttocontrollers(cmdbuffer);
         break;
+      } else {
+        cmdbuffer[pos] = *buff_ptr;
       }
-      cmdbuffer[pos] = *buff_ptr;
 
       pos++;
       buff_ptr++;
