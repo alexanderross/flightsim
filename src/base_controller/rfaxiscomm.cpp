@@ -130,11 +130,11 @@ void readfromcmdmem(){
     buff_ptr = inbuffer;
     while(true){
       if(*buff_ptr == CMD_MEM_SEP){
-        cmdbuffer[pos+1] = '\0';
+        cmdbuffer[pos] = '\0';
         broadcasttocontrollers(cmdbuffer);
-        pos = 0;
+        pos = -1;
       } else if(*buff_ptr == '\0'){
-        cmdbuffer[pos+1] = '\0';
+        cmdbuffer[pos] = '\0';
         broadcasttocontrollers(cmdbuffer);
         break;
       } else {
