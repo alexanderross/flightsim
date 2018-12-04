@@ -44,6 +44,8 @@ char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating
 int resetrequested = 0;
 int resetcomplete = 0;
 
+int use_speed_jump = 1;
+
 //We have 8 registers to write to - go through them to allow the accel smoothing for speed mode
 uint16_t last_used_speed = 0;
 
@@ -181,6 +183,8 @@ void process_cmd(int destination, int value){
     //222 - Move to position N*2
     }else if(destination == 223){
       setdriveenabled(value);
+    }else if(destination == 224){
+      use_speed_jump = value;
     }
 
   }else{
@@ -189,6 +193,8 @@ void process_cmd(int destination, int value){
 }
 
 void write_to_register(int dest_register, int value){
+  Serial.printf("Attempt print %d - %d \n", dest_register, value);
+
   uint8_t message[10];
   message[0] = 1;
   message[1] = 6;
@@ -220,7 +226,7 @@ void write_to_register(int dest_register, int value){
   ascii_message[16] = '\n';
   ascii_message[17] = '\0';
 
-  Serial.printf("Writing %d to %d as %s \n", value, dest_register, ascii_message);
+  Serial.printf("Writing as %s \n", ascii_message);
   driveserial.print(ascii_message);
 }
 
@@ -229,6 +235,10 @@ void send_speed_command(int requested_speed){
 
       //Write the speed to ISR2
       last_used_speed++;
+
+      if(use_speed_jump == 0 ){
+        last_used_speed = 0;
+      }
 
       if(last_used_speed == 8){
         last_used_speed = 0;
@@ -243,6 +253,8 @@ void send_speed_command(int requested_speed){
       write_to_register(68, command);
 
       last_req_speed = requested_speed;
+    }else{
+      Serial.println("SPEED SAME");
     }
 }
 
