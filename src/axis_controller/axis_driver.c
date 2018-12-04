@@ -180,7 +180,7 @@ void process_cmd(int destination, int value){
     }else if(destination == 221){
       send_speed_command(value);
     }else if(destination == 222){
-    //222 - Move to position N*2
+      sendposition(value);
     }else if(destination == 223){
       setdriveenabled(value);
     }else if(destination == 224){
@@ -275,17 +275,19 @@ void sendposition(int pos){
   uint32_t command = 0x01;
   //set speed to req #
   command = command | (1 << 8);
-  write_to_register(68, 0);
+  write_to_register(68, 1);
   write_to_register(69, command);
   
 }
 
 void resetposition(){
   //Or put in a speed request here.
+  Serial.println("Reset requested");
   send_speed_command(75);
   while(!digitalRead(ZERO_STOP_PIN)){
     //Keep waiting
   }
+  Serial.println("Reset zero signaled");
   resetrequested = 0;
   send_speed_command(0);
 

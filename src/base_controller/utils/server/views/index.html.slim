@@ -13,7 +13,7 @@ javascript:
   function sendValue(axis, dest, val){
     const Http = new XMLHttpRequest();
     const url="/write?axis="+axis+"&r="+dest+"&v="+val;
-    Http.open("POST", url);
+    Http.open("GET", url);
     Http.send();
     Http.onreadystatechange=(e)=>{
       handleResponse(Http);
@@ -23,7 +23,7 @@ javascript:
   function sendDualValue(rdest, rval, pdest, pval){
     const Http = new XMLHttpRequest();
     const url="/write_dual?pc="+pdest+"|"+pval+"&rc="+rdest+"|"+rval;
-    Http.open("POST", url);
+    Http.open("GET", url);
     Http.send();
     Http.onreadystatechange=(e)=>{
       handleResponse(Http);
@@ -44,18 +44,34 @@ javascript:
     }
   }
 
+  function setDrvEnab(axis, state){
+    sendValue(axis,223, state);
+    document.getElementById(axis+"box").checked = (state == 1);
+    return true;
+  }
+
+  function drvEnab(obj, axis){
+    setDrvEnab(axis, obj.checked ? 1 : 0);
+    return true;
+  }
+
+  function spdStep(obj, axis){
+    sendValue(axis,224, obj.checked ? 1 : 0);
+    return true;
+  }
+
 
 html
   head
     title Flight Sim Control Panel
     link rel='stylesheet' type='text/css' href='https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css'
   body
+    .columns#err_message_ctr
+      .column.is-full
+        .notification.is-danger#errmsg Something done fucked up
     .section.has-background-light
-      .columns#err_message_ctr
-        .column.is-full
-          .notification.is-danger#errmsg Something done fucked up
-      .columns.is-mobile
-        .column.is-one-third-desktop.is-full-mobile
+      .columns
+        .column.is-one-third
           .box
             .columns
               .column.is-full
@@ -80,7 +96,7 @@ html
             .columns
               .column.is-full
                 a.button.is-medium#zreset Reset to Zero
-        .column.is-one-third-desktop.is-full-mobile
+        .column.is-one-third
           .box 
             .columns
               .column.is-full
@@ -94,8 +110,13 @@ html
             .columns
               .column.is-full
                 a.button.is-medium onclick="resetAxis('a');" Reset both Axes
-
-        .column.is-one-third-desktop.is-full-mobile
+            .columns
+              .column.is-full
+                a.button.is-medium.is-danger onclick="setDrvEnab('roll',0);" Disable Roll
+            .columns
+              .column.is-full
+                a.button.is-medium.is-danger onclick="setDrvEnab('pitch',0);" Disable Pitch
+        .column.is-one-third
           .box 
             .columns
               .column.is-full
@@ -120,6 +141,34 @@ html
             .columns
               .column.is-full
                 a.button.is-medium#sendcmd Send
+      .columns
+        .column.is-full
+          .box 
+            .columns
+              .column
+                div
+                  b.is-size-5 Drive enabled
+                div
+                  label.checkbox 
+                    input#pitchbox onclick="drvEnab(this,'pitch')" type="checkbox" value="1"
+                    |  Pitch
+                div
+                  label.checkbox 
+                    input#rollbox onclick="drvEnab(this,'roll')" type="checkbox" value="1"
+                    |  Roll
+              .column
+                div
+                  b.is-size-5 Speed Stepping
+                  p if its enabled on the axis
+                div
+                  label.checkbox 
+                    input#pitchspbox onclick="spdStep(this,'pitch')" type="checkbox" value="1"
+                    |  Pitch
+                div
+                  label.checkbox 
+                    input#rollspbox onclick="spdStep(this, 'roll');" type="checkbox" value="1"
+                    |  Roll
+
 
 javascript:
 

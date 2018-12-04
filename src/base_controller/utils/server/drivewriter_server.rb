@@ -41,7 +41,7 @@ class App < Rack::App
     required 'v', :class => String, :desc => 'The value to write', :example => '1200'
   end
 
-  post '/write' do
+  get '/write' do
     axis = process_axis(params)
     msg, success = write_to_drive(AxisCommand.new(axis, params['r'], params['v']))
     response.status = 500 unless success
@@ -50,14 +50,14 @@ class App < Rack::App
 
   end
 
-  post '/write_dual' do
+  get '/write_dual' do
     rolldest, rollval = params["rc"].split("|")
     roll_cmd = AxisCommand.new("roll", rolldest, rollval)
 
     pitchdest, pitchval = params["pc"].split("|")
     pitch_cmd = AxisCommand.new("pitch", pitchdest, pitchval)
 
-    msg, success =write_to_drive([roll_cmd, pitch_cmd])
+    msg, success = write_to_drive([roll_cmd, pitch_cmd])
     response.status = 500 unless success
 
     msg
