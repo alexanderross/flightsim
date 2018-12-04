@@ -16,10 +16,10 @@
 
 //CHANGE FOR EACH AXIS DAMNIT 
 // PITCH---------------------------
-static char ACK_MSG[] = "P";
-static char CMD_AXIS_FLAG = 'I';
-static char POS_AXIS_FLAG = 'P';
-static char GEAR_REDUCTION = 40;
+//static char ACK_MSG[] = "P";
+//static char CMD_AXIS_FLAG = 'I';
+//static char POS_AXIS_FLAG = 'P';
+//static char GEAR_REDUCTION = 40;
 // ROLL ---------------------------
 static char ACK_MSG[] = "R";
 static char CMD_AXIS_FLAG = 'O';
@@ -43,6 +43,9 @@ char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating
 //Reset flags
 int resetrequested = 0;
 int resetcomplete = 0;
+
+//We have 8 registers to write to - go through them to allow the accel smoothing for speed mode
+uint16_t last_used_speed = 0;
 
 uint16_t last_req_speed = 0;
 
@@ -176,6 +179,8 @@ void process_cmd(int destination, int value){
       send_speed_command(value);
     }else if(destination == 222){
     //222 - Move to position N*2
+    }else if(destination == 223){
+      setdriveenabled(value);
     }
 
   }else{
@@ -221,23 +226,35 @@ void write_to_register(int dest_register, int value){
 
 void send_speed_command(int requested_speed){
     if(last_req_speed != requested_speed){
+
       //Write the speed to ISR2
-      write_to_register(170, requested_speed);
+      last_used_speed++;
+
+      if(last_used_speed == 8){
+        last_used_speed = 0;
+      }
+      write_to_register(169 + last_used_speed, requested_speed);
 
       //Form the command to run ISR2
       uint32_t command = 0x01;
       //set speed to req #
-      command = command | (1 << 8);
+      command = command | (last_used_speed << 8);
       write_to_register(69, 0);
       write_to_register(68, command);
+
+      last_req_speed = requested_speed;
     }
+}
+
+void setdriveenabled(int state){
+  uint32_t command = state;
+  write_to_register(68, command);
 }
 
 void sendposition(int pos){
   //Write the position to IP1
-  int rpos = 0;
 
-  float rpos = (2500/360.0) * pos * GEAR_REDUCTION;
+  int rpos = (2500/360.0) * pos * GEAR_REDUCTION;
 
   write_to_register(122, rpos/10000);
   write_to_register(123, rpos % 10000);
@@ -253,11 +270,12 @@ void sendposition(int pos){
 
 void resetposition(){
   //Or put in a speed request here.
-
+  send_speed_command(75);
   while(!digitalRead(ZERO_STOP_PIN)){
-    //Keep inching axis drive until we hit the stop.
+    //Keep waiting
   }
   resetrequested = 0;
+  send_speed_command(0);
 
   //We check this flag above to avoid continually entering the reset position loop.
   resetcomplete = 1;
