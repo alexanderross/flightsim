@@ -43,7 +43,7 @@ class App < Rack::App
 
   post '/write' do
     axis = process_axis(params)
-    msg, success = write_to_drive(axis, params['r'], params['v'])
+    msg, success = write_to_drive(AxisCommand.new(axis, params['r'], params['v']))
     response.status = 500 unless success
 
     msg
