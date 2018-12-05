@@ -35,7 +35,7 @@ RF24 radio(D4,D8);
 
 // Radio pipe addresses for the 2 nodes to communicate x and y share them.
 const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
-static int ZERO_STOP_PIN = D0;
+static int ZERO_STOP_PIN = D3;
 
 const int read_payload_size = 10;
 char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating NULL char
