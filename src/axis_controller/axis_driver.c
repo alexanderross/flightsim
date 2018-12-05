@@ -44,7 +44,7 @@ char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating
 int resetrequested = 0;
 int resetcomplete = 0;
 
-int use_speed_jump = 1;
+int use_speed_jump = 0;
 
 //We have 8 registers to write to - go through them to allow the accel smoothing for speed mode
 uint16_t last_used_speed = 0;
@@ -66,7 +66,7 @@ void setup(void)
   // Setup and configure rf radio
   //
   radio.begin();
-
+  radio.setPALevel(RF24_PA_HIGH);
   // enable dynamic payloads
   radio.enableDynamicPayloads();
 
@@ -237,7 +237,7 @@ void send_speed_command(int requested_speed){
       last_used_speed++;
 
       if(use_speed_jump == 0 ){
-        last_used_speed = 0;
+        last_used_speed = 7;
       }
 
       if(last_used_speed == 8){
@@ -316,8 +316,6 @@ void loop(void)
     receive_payload[len] = '\0';
 
     // Spew it
-    Serial.print(F("Got response size="));
-    Serial.print(len);
     Serial.print(F(" value="));
     Serial.println(receive_payload);
 
@@ -327,14 +325,8 @@ void loop(void)
     // Parse out that reset signal too
     process_message(receive_payload);
 
-    // First, stop listening so we can talk
-    radio.stopListening();
-
     // Send the final one back.
     ack_message();
-    Serial.println(F("Sent response."));
 
-    // Now, resume listening so we catch the next packets.
-    radio.startListening();
   }
 }
