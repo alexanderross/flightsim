@@ -34,11 +34,10 @@ static uint8_t ROLLACTIVEMASK = 0x40; //01000000 64
 static uint8_t PITCHACTIVEMASK = 0x20;//00100000 32
 
 const int write_payload_size = 10;
-const int read_payload_size = 2;
+const int read_payload_size = 1;
 
 int resetrequested = 0;
 
-char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating NULL char
 
 //Maybe axes this to use one read pipe and have each axes figure out what to get. 
 void broadcasttocontrollers(char broadcaststr[write_payload_size+1]){
@@ -216,7 +215,7 @@ int main(int argc, char** argv) {
 
     if(radio.available()){
       // Grab the response, compare, and send to debugging spew
-      char response[read_payload_size];
+      char response[read_payload_size+1];
       radio.read( response, read_payload_size );
 
       handleresponse(response);
