@@ -69,6 +69,7 @@ void setup(void)
   radio.enableDynamicPayloads();
   radio.setAutoAck(false);
   radio.setChannel(110);
+  radio.setPALevel(RF24_PA_HIGH);
 
 
 

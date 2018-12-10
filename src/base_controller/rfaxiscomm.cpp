@@ -49,8 +49,12 @@ void broadcasttocontrollers(char broadcaststr[write_payload_size+1]){
 
   radio.openWritingPipe(currentwriteypipe);
 
-  radio.write(broadcaststr, write_payload_size);
-  printf("WROTE %s \n", broadcaststr);
+  if(radio.write(broadcaststr, write_payload_size))
+  {
+    printf("WROTE %s \n", broadcaststr);
+  } else {
+    printf("FAILED TO TX %s", broadcaststr);
+  }
 
   radio.startListening();
 }
@@ -200,6 +204,7 @@ int main(int argc, char** argv) {
   radio.enableDynamicPayloads();
   radio.setAutoAck(false);
   radio.setChannel(110);
+  radio.setPALevel(RF24_PA_HIGH);
   radio.printDetails();
 
 
