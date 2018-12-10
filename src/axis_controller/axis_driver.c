@@ -38,7 +38,6 @@ const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
 static int ZERO_STOP_PIN = D3;
 
 const int read_payload_size = 10;
-char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating NULL char
 
 //Reset flags
 int resetrequested = 0;
@@ -66,9 +65,12 @@ void setup(void)
   // Setup and configure rf radio
   //
   radio.begin();
-  radio.setPALevel(RF24_PA_HIGH);
   // enable dynamic payloads
   radio.enableDynamicPayloads();
+  radio.setAutoAck(false);
+  radio.setChannel(110);
+
+
 
   radio.openWritingPipe(pipes[1]);
   radio.openReadingPipe(1,pipes[0]);
@@ -92,6 +94,8 @@ void setup(void)
   write_to_register(75, 1);
   delay(3000);
   write_to_register(75, 0);
+  write_to_register(176,0);
+  send_speed_command(0);
 }
 
 void ack_message(){
@@ -193,41 +197,43 @@ void process_cmd(int destination, int value){
 }
 
 void write_to_register(int dest_register, int value){
-  Serial.printf("Attempt print %d - %d \n", dest_register, value);
+  if(dest_register > 0 && dest_register < 190){
+    Serial.printf("Attempt print %d - %d \n", dest_register, value);
 
-  uint8_t message[10];
-  message[0] = 1;
-  message[1] = 6;
-  message[2] = dest_register >> 8;
-  message[3] = dest_register & 0x00ff;
-  message[4] = value >> 8;
-  message[5] = value & 0x00ff;
+    uint8_t message[10];
+    message[0] = 1;
+    message[1] = 6;
+    message[2] = dest_register >> 8;
+    message[3] = dest_register & 0x00ff;
+    message[4] = value >> 8;
+    message[5] = value & 0x00ff;
 
-  uint8_t lrc = 0; 
-  int iter = 6;
+    uint8_t lrc = 0; 
+    int iter = 6;
 
-  while (iter--) {
-      lrc += message[iter];
+    while (iter--) {
+        lrc += message[iter];
+    }
+    
+    lrc = (-lrc);
+    message[6] = lrc;
+    
+    char ascii_message[18];
+
+    ascii_message[0] = ':';
+    
+    for(int k = 0; k < 7; k++){
+      ascii_message[(2*k)+1] = nibble_to_hex_ascii(message[k] >> 4);
+      ascii_message[(2*k)+2] = nibble_to_hex_ascii(message[k] & 0x0f);
+    }
+    
+    ascii_message[15] = '\r';
+    ascii_message[16] = '\n';
+    ascii_message[17] = '\0';
+
+    Serial.printf("Writing as %s \n", ascii_message);
+    driveserial.print(ascii_message);
   }
-  
-  lrc = (-lrc);
-  message[6] = lrc;
-  
-  char ascii_message[18];
-
-  ascii_message[0] = ':';
-  
-  for(int k = 0; k < 7; k++){
-    ascii_message[(2*k)+1] = nibble_to_hex_ascii(message[k] >> 4);
-    ascii_message[(2*k)+2] = nibble_to_hex_ascii(message[k] & 0x0f);
-  }
-  
-  ascii_message[15] = '\r';
-  ascii_message[16] = '\n';
-  ascii_message[17] = '\0';
-
-  Serial.printf("Writing as %s \n", ascii_message);
-  driveserial.print(ascii_message);
 }
 
 void send_speed_command(int requested_speed){
@@ -309,6 +315,8 @@ void loop(void)
     if(!len){
       continue; 
     }
+
+    char receive_payload[read_payload_size+1]; // +1 to allow room for a terminating NULL char
     
     radio.read( receive_payload, len );
 
@@ -316,7 +324,7 @@ void loop(void)
     receive_payload[len] = '\0';
 
     // Spew it
-    Serial.print(F(" value="));
+    Serial.printf("Got %s len is %d", receive_payload, strlen(receive_payload));
     Serial.println(receive_payload);
 
     //TODO - transmit to the axis drive after doing 360' translation

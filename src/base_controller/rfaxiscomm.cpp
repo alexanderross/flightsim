@@ -198,8 +198,8 @@ int main(int argc, char** argv) {
   // Setup and configure rf radio
   radio.begin();
   radio.enableDynamicPayloads();
-  radio.setRetries(5, 15);
-  radio.setPALevel(RF24_PA_MIN);
+  radio.setAutoAck(false);
+  radio.setChannel(110);
   radio.printDetails();
 
 
