@@ -52,6 +52,7 @@ void broadcasttocontrollers(char broadcaststr[write_payload_size+1]){
   if(radio.write(broadcaststr, write_payload_size))
   {
     printf("WROTE %s \n", broadcaststr);
+    usleep(10);
   } else {
     printf("FAILED TO TX %s", broadcaststr);
   }

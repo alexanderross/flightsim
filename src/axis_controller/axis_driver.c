@@ -45,6 +45,8 @@ int resetcomplete = 0;
 
 int use_speed_jump = 0;
 
+int ack_ct = 0;
+
 //We have 8 registers to write to - go through them to allow the accel smoothing for speed mode
 uint16_t last_used_speed = 0;
 
@@ -306,7 +308,7 @@ void resetposition(){
 void loop(void)
 {
 
-  while ( radio.available() )
+  while( radio.available() )
   {
 
     // Fetch the payload, and see if this was the last one.
@@ -314,6 +316,7 @@ void loop(void)
     
     // If a corrupt dynamic payload is received, it will be flushed
     if(!len){
+      Serial.println("Dynamic payload is corrupted.");
       continue; 
     }
 
@@ -334,8 +337,11 @@ void loop(void)
     // Parse out that reset signal too
     process_message(receive_payload);
 
-    // Send the final one back.
-    ack_message();
+  }
+  ack_ct++;
 
+  if(ack_ct > 2000){
+    ack_message();
+    ack_ct = 0;
   }
 }
