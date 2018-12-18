@@ -192,9 +192,9 @@ void setgpioflags(int xactive, int yactive){
 }
 
 void handleresponse(char response[], uint8_t pipeNumber){
-  if(pipeNum == PITCH_PIPE_INDEX){
+  if(pipeNumber == PITCH_PIPE_INDEX){
     setgpioflags(0,1);
-  }else if(pipeNum == ROLL_PIPE_INDEX){
+  }else if(pipeNumber == ROLL_PIPE_INDEX){
     setgpioflags(1,0);
   }
 
