@@ -20,11 +20,13 @@
 //static char CMD_AXIS_FLAG = 'I';
 //static char POS_AXIS_FLAG = 'P';
 //static char GEAR_REDUCTION = 40;
+//const uint8_t tx_addr[6] = "2Node";
 // ROLL ---------------------------
 static char ACK_MSG[] = "R";
 static char CMD_AXIS_FLAG = 'O';
 static char POS_AXIS_FLAG = 'R';
 static char GEAR_REDUCTION = 30;
+const uint8_t tx_addr[6] = "3Node";
 // 
 
 SoftwareSerial driveserial(D1, D2);
@@ -34,8 +36,11 @@ RF24 radio(D4,D8);
 
 
 // Radio pipe addresses for the 2 nodes to communicate x and y share them.
-const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
+const uint8_t rx_addr[6] = "1Node";
 static int ZERO_STOP_PIN = D3;
+
+//Timeout for serial reads
+const int READ_TIMEOUT = 500;
 
 const int read_payload_size = 10;
 
@@ -44,6 +49,8 @@ int resetrequested = 0;
 int resetcomplete = 0;
 
 int use_speed_jump = 0;
+
+int ack_interval = 8000;
 
 int ack_ct = 0;
 
@@ -75,8 +82,8 @@ void setup(void)
 
 
 
-  radio.openWritingPipe(pipes[1]);
-  radio.openReadingPipe(1,pipes[0]);
+  radio.openWritingPipe(wrt_pipe);
+  radio.openReadingPipe(1, rd_pipe);
   //
   // Start listening
   //
@@ -102,8 +109,33 @@ void setup(void)
 }
 
 void ack_message(){
+  // Get the state of the drive, then send it.
+
+  //Write the read command
+
+  //Listen to the response
+
+  unsigned int starttime = 0;
+  starttime = micros();
+  char srecbuffer[14];
+  uint8_t rcv_len = 0;
+
+  while(srecbuffer[rcv_len] != '\0' && srecbuffer[rcv_len] != '\r'){
+    if((micros() - time) > READ_TIMEOUT){
+      Serial.println("Read timeout exceeded.");
+      continue;
+    }
+    
+    if(driveserial.available()){
+      srecbuffer[rcv_len] = driveserial.read();
+      rcv_len++;
+    }
+  }
+
+  Serial.println("GOT %s",srecbuffer)
+  //Send the response ( 5 digits)
   radio.stopListening();
-  radio.write(ACK_MSG,1);
+  radio.write("TEST00\0",7);
   radio.startListening();
 }
 
@@ -185,17 +217,75 @@ void process_cmd(int destination, int value){
       //220 - Manual Reset
       resetposition();
     }else if(destination == 221){
+      //SEND AS SPEED COMMAND
       send_speed_command(value);
     }else if(destination == 222){
+      //SEND POSITION
       sendposition(value);
     }else if(destination == 223){
+      //ENABLE or DISABLE DRIVE
       setdriveenabled(value);
     }else if(destination == 224){
+      //USE SPEED REGISTER JUMPING
       use_speed_jump = value;
+    }else if(destination == 225){
+      //ACK interval
+      ack_interval = value;
+    }else if(destination == 226){
+      //RESTART CONTROLLER
+      ESP.restart();
     }
 
   }else{
     write_to_register(destination, value);
+  }
+}
+
+void send_modbus_ascii(int dest_register, int value, uint8_t * message){
+  message[2] = dest_register >> 8;
+  message[3] = dest_register & 0x00ff;
+  message[4] = value >> 8;
+  message[5] = value & 0x00ff;
+
+  uint8_t lrc = 0; 
+  int iter = 6;
+
+  while (iter--) {
+      lrc += message[iter];
+  }
+  
+  lrc = (-lrc);
+  message[6] = lrc;
+  
+  char ascii_message[18];
+
+  ascii_message[0] = ':';
+  
+  for(int k = 0; k < 7; k++){
+    ascii_message[(2*k)+1] = nibble_to_hex_ascii(message[k] >> 4);
+    ascii_message[(2*k)+2] = nibble_to_hex_ascii(message[k] & 0x0f);
+  }
+  
+  ascii_message[15] = '\r';
+  ascii_message[16] = '\n';
+  ascii_message[17] = '\0';
+
+  Serial.printf("Writing as %s \n", ascii_message);
+  driveserial.print(ascii_message);
+}
+
+void read_register(int register){
+  if(dest_register > 0 && dest_register <= 389){
+    Serial.printf("Attempt read %d  \n", dest_register);
+
+    uint8_t message[10];
+    message[0] = 1;
+    message[1] = 3;
+
+    send_modbus_ascii(dest_register, 1, &message);
+
+
+    //READ A RESPONSE
   }
 }
 
@@ -206,36 +296,9 @@ void write_to_register(int dest_register, int value){
     uint8_t message[10];
     message[0] = 1;
     message[1] = 6;
-    message[2] = dest_register >> 8;
-    message[3] = dest_register & 0x00ff;
-    message[4] = value >> 8;
-    message[5] = value & 0x00ff;
 
-    uint8_t lrc = 0; 
-    int iter = 6;
+    send_modbus_ascii(dest_register, value, &message);
 
-    while (iter--) {
-        lrc += message[iter];
-    }
-    
-    lrc = (-lrc);
-    message[6] = lrc;
-    
-    char ascii_message[18];
-
-    ascii_message[0] = ':';
-    
-    for(int k = 0; k < 7; k++){
-      ascii_message[(2*k)+1] = nibble_to_hex_ascii(message[k] >> 4);
-      ascii_message[(2*k)+2] = nibble_to_hex_ascii(message[k] & 0x0f);
-    }
-    
-    ascii_message[15] = '\r';
-    ascii_message[16] = '\n';
-    ascii_message[17] = '\0';
-
-    Serial.printf("Writing as %s \n", ascii_message);
-    driveserial.print(ascii_message);
   }
 }
 
@@ -340,7 +403,7 @@ void loop(void)
   }
   ack_ct++;
 
-  if(ack_ct > 2000){
+  if(ack_ct > ack_interval){
     ack_message();
     ack_ct = 0;
   }

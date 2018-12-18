@@ -18,8 +18,14 @@ using namespace std;
 // Setup for GPIO 15 CE and CE0 CSN with SPI Speed @ 8Mhz
 RF24 radio(RPI_V2_GPIO_P1_15, RPI_V2_GPIO_P1_24, BCM2835_SPI_SPEED_8MHZ);
 
+static uint8_t PITCH_PIPE_INDEX = 2;
+static uint8_t ROLL_PIPE_INDEX = 1;
+
 // Radio pipe addresses comms - W, R. 
 const uint64_t axispipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
+const uint8_t txaddr[6] = "1Node";
+const uint8_t pitchrxaddr[6] = "2Node";
+const uint8_t rollrxaddr[6] = "3Node";
 
 static char rfcfpath[] = "/tmp/rfpath";
 static char rfcmdpath[] = "/tmp/rfcmdpath"; 
@@ -34,7 +40,7 @@ static uint8_t ROLLACTIVEMASK = 0x40; //01000000 64
 static uint8_t PITCHACTIVEMASK = 0x20;//00100000 32
 
 const int write_payload_size = 10;
-const int read_payload_size = 1;
+const int read_payload_size = 7;
 
 int resetrequested = 0;
 
@@ -185,14 +191,14 @@ void setgpioflags(int xactive, int yactive){
 
 }
 
-void handleresponse(char response[]){
-  for(int i = 0; i < read_payload_size; i++){
-    if(response[i] == xactiveflag){
-      setgpioflags(1,0);
-    }else if(response[i] == yactiveflag){
-      setgpioflags(0,1);
-    }
+void handleresponse(char response[], uint8_t pipeNumber){
+  if(pipeNum == PITCH_PIPE_INDEX){
+    setgpioflags(0,1);
+  }else if(pipeNum == ROLL_PIPE_INDEX){
+    setgpioflags(1,0);
   }
+
+  printf("Handled %s from %d", response, pipeNumber);
 }
 
 int main(int argc, char** argv) {
@@ -211,7 +217,8 @@ int main(int argc, char** argv) {
 
   printf("\n ************ THEM DETAILS IS ABOVE ***********\n");
   
-  radio.openReadingPipe(1, axispipes[1]);
+  radio.openReadingPipe(ROLL_PIPE_INDEX, rollrxaddr);
+  radio.openReadingPipe(PITCH_PIPE_INDEX, pitchrxaddr);
 
   radio.startListening();
 
@@ -219,16 +226,17 @@ int main(int argc, char** argv) {
   while (1)
   {
 
-    if(radio.available()){
+    uint8_t pipeNum;
+    while(radio.available(&pipeNum)){
       // Grab the response, compare, and send to debugging spew
       char response[read_payload_size+1];
       radio.read( response, read_payload_size );
 
-      handleresponse(response);
+      handleresponse(response, pipeNum);
 
 
       // Spew it
-      printf("Got response size=%i value=%s\n\r", read_payload_size, response);
+      printf("Got response size=%i value=%s\n from %d\r", read_payload_size, response, pipeNum);
 
       //Send the response msg to some sort of thing. 
     }
