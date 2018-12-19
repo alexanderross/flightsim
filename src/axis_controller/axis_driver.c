@@ -39,7 +39,7 @@ RF24 radio(D4,D8);
 const uint8_t rx_addr[6] = "1Node";
 static int ZERO_STOP_PIN = D3;
 
-//Timeout for serial reads
+//Timeout for serial reads in microseconds
 const int READ_TIMEOUT = 5000;
 
 const int read_payload_size = 10;
@@ -110,38 +110,23 @@ void setup(void)
 }
 
 void ack_message(){
-  driveserial.flush();
   // Get the state of the drive, then send it.
 
   //Write the read command
-  read_register(366);
+  int value = read_register(386);
   //Listen to the response
 
-  unsigned int starttime = 0;
-  starttime = micros();
-  char srecbuffer[14];
-  uint8_t rcv_len = 0;
+  if(value < 0 ){
+    Serial.println("Recieved corrupt response, not sending ack.");
+  }else{
 
-  while( srecbuffer[rcv_len] != '\r'){
-    if((micros() - starttime) > READ_TIMEOUT){
-      Serial.println("Read timeout exceeded.");
-      break;
-    }
-
-    if(driveserial.available()){
-      srecbuffer[rcv_len] = driveserial.read();
-      rcv_len++;
-    }
+    char sendpayload[5];
+    sprintf(sendpayload,"%d\0",value);
+    //Send the response ( 5 digits + 1 end)
+    radio.stopListening();
+    radio.write(sendpayload,6);
+    radio.startListening();
   }
-  srecbuffer[rcv_len]='\0';
- 
-  Serial.printf("GOT %s\n",srecbuffer);
-  Serial.println("----");
-  //Send the response ( 5 digits)
-  radio.stopListening();
-  radio.write("TEST00\0",7);
-  radio.startListening();
-  driveserial.flush();
 }
 
 void process_message(char *message){
@@ -246,12 +231,7 @@ void process_cmd(int destination, int value){
   }
 }
 
-void send_modbus_ascii(int dest_register, int value, uint8_t * message){
-  message[2] = dest_register >> 8;
-  message[3] = dest_register & 0x00ff;
-  message[4] = value >> 8;
-  message[5] = value & 0x00ff;
-
+char calculate_lrc_for_message(uint8_t * message){
   uint8_t lrc = 0; 
   int iter = 6;
 
@@ -259,8 +239,17 @@ void send_modbus_ascii(int dest_register, int value, uint8_t * message){
       lrc += message[iter];
   }
   
-  lrc = (-lrc);
-  message[6] = lrc;
+  return (-lrc);
+  
+}
+
+void send_modbus_ascii(int dest_register, int value, uint8_t * message){
+  message[2] = dest_register >> 8;
+  message[3] = dest_register & 0x00ff;
+  message[4] = value >> 8;
+  message[5] = value & 0x00ff;
+
+  message[6] = calculate_lrc_for_message(message);
   
   char ascii_message[18];
 
@@ -279,8 +268,58 @@ void send_modbus_ascii(int dest_register, int value, uint8_t * message){
   driveserial.print(ascii_message);
 }
 
+uint8_t response_is_valid(char * response_msg){
+  if(strlen(response_msg) < 13){
+    return 0;
+  }
+
+  if(response_msg[0] != ':'){
+    return 0;
+  }
+
+  uint8_t newmessage[5];
+      
+  for(int i=0; i < 5; i++){
+    char tmpasc[3];
+    tmpasc[0] = response_msg[(2*i)+1];
+    tmpasc[1] = response_msg[(2*i)+2];
+    tmpasc[2] = '\0';
+    
+    uint8_t val = strtol(tmpasc,NULL,16);
+    newmessage[i] = val;
+  }
+  
+  char lrcasc[3];
+  lrcasc[0] = response_msg[11];
+  lrcasc[1] = response_msg[12];
+  lrcasc[2] = '\0';
+  
+  uint8_t msg_lrc = strtol(lrcasc,NULL,16);
+  
+  uint8_t lrc = calculate_lrc_for_message(newmessage);
+  if(msg_lrc == lrc){
+    return 1;
+  }else{
+    return 0;
+  }
+  
+  return 1;
+  
+}
+
+int parse_int_from_read_response(char * response_msg){
+  char tmpasc[5];
+  for(int i = 7;i<11;i++){
+    tmpasc[i-7] = response_msg[i];
+  }
+  tmpasc[4] = '\0';
+  return (int)strtol(tmpasc,NULL,16);
+}
+
 void read_register(int d_register){
   if(d_register > 0 && d_register <= 389){
+    driveserial.flush();
+
     Serial.printf("Attempt read %d  \n", d_register);
 
     uint8_t message[10];
@@ -289,8 +328,34 @@ void read_register(int d_register){
 
     send_modbus_ascii(d_register, 1, message);
 
+    unsigned int starttime = 0;
+    starttime = micros();
+    char srecbuffer[14];
+    uint8_t rcv_len = 0;
 
-    //READ A RESPONSE
+    while( srecbuffer[rcv_len] != '\r'){
+      if((micros() - starttime) > READ_TIMEOUT){
+        Serial.println("Read timeout exceeded.");
+        break;
+      }
+
+      if(driveserial.available()){
+        srecbuffer[rcv_len] = driveserial.read();
+        rcv_len++;
+      }
+    }
+    srecbuffer[rcv_len]='\0';
+
+    Serial.printf("GOT %s\n",srecbuffer);
+    Serial.println("--Validating--");
+
+    if(response_is_valid(srecbuffer) == 1){
+      return -1;
+    }else{
+      return parse_int_from_read_response(srecbuffer);
+    }
+
+    driveserial.flush();
   }
 }
 
