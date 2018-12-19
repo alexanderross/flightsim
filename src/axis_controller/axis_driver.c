@@ -361,7 +361,7 @@ void resetposition(){
   //Or put in a speed request here.
   Serial.println("Reset requested");
   send_speed_command(75);
-  while(!digitalRead(ZERO_STOP_PIN)){
+  while(digitalRead(ZERO_STOP_PIN)){
     //Keep waiting
   }
   Serial.println("Reset zero signaled");
