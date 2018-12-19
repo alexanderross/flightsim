@@ -40,7 +40,7 @@ const uint8_t rx_addr[6] = "1Node";
 static int ZERO_STOP_PIN = D3;
 
 //Timeout for serial reads
-const int READ_TIMEOUT = 500;
+const int READ_TIMEOUT = 5000;
 
 const int read_payload_size = 10;
 
@@ -50,7 +50,7 @@ int resetcomplete = 0;
 
 int use_speed_jump = 0;
 
-int ack_interval = 8000;
+int ack_interval = 140000;
 
 int ack_ct = 0;
 
@@ -69,6 +69,7 @@ void setup(void)
   
   pinMode(D2, OUTPUT);
   driveserial.begin(38400);
+  Serial.println("STARTING");
 
   //
   // Setup and configure rf radio
@@ -82,8 +83,8 @@ void setup(void)
 
 
 
-  radio.openWritingPipe(wrt_pipe);
-  radio.openReadingPipe(1, rd_pipe);
+  radio.openWritingPipe(tx_addr);
+  radio.openReadingPipe(1, rx_addr);
   //
   // Start listening
   //
@@ -109,10 +110,11 @@ void setup(void)
 }
 
 void ack_message(){
+  driveserial.flush();
   // Get the state of the drive, then send it.
 
   //Write the read command
-
+  read_register(366);
   //Listen to the response
 
   unsigned int starttime = 0;
@@ -120,23 +122,26 @@ void ack_message(){
   char srecbuffer[14];
   uint8_t rcv_len = 0;
 
-  while(srecbuffer[rcv_len] != '\0' && srecbuffer[rcv_len] != '\r'){
-    if((micros() - time) > READ_TIMEOUT){
+  while( srecbuffer[rcv_len] != '\r'){
+    if((micros() - starttime) > READ_TIMEOUT){
       Serial.println("Read timeout exceeded.");
-      continue;
+      break;
     }
-    
+
     if(driveserial.available()){
       srecbuffer[rcv_len] = driveserial.read();
       rcv_len++;
     }
   }
-
-  Serial.println("GOT %s",srecbuffer)
+  srecbuffer[rcv_len]='\0';
+ 
+  Serial.printf("GOT %s\n",srecbuffer);
+  Serial.println("----");
   //Send the response ( 5 digits)
   radio.stopListening();
   radio.write("TEST00\0",7);
   radio.startListening();
+  driveserial.flush();
 }
 
 void process_message(char *message){
@@ -274,15 +279,15 @@ void send_modbus_ascii(int dest_register, int value, uint8_t * message){
   driveserial.print(ascii_message);
 }
 
-void read_register(int register){
-  if(dest_register > 0 && dest_register <= 389){
-    Serial.printf("Attempt read %d  \n", dest_register);
+void read_register(int d_register){
+  if(d_register > 0 && d_register <= 389){
+    Serial.printf("Attempt read %d  \n", d_register);
 
     uint8_t message[10];
     message[0] = 1;
     message[1] = 3;
 
-    send_modbus_ascii(dest_register, 1, &message);
+    send_modbus_ascii(d_register, 1, message);
 
 
     //READ A RESPONSE
@@ -297,7 +302,7 @@ void write_to_register(int dest_register, int value){
     message[0] = 1;
     message[1] = 6;
 
-    send_modbus_ascii(dest_register, value, &message);
+    send_modbus_ascii(dest_register, value, message);
 
   }
 }
