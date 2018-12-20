@@ -120,8 +120,8 @@ void ack_message(){
     Serial.println("Recieved corrupt response, not sending ack.");
   }else{
 
-    char sendpayload[5];
-    sprintf(sendpayload,"%d\0",value);
+    char sendpayload[6];
+    sprintf(sendpayload,"%05d\0",value);
     //Send the response ( 5 digits + 1 end)
     radio.stopListening();
     radio.write(sendpayload,6);

@@ -198,6 +198,7 @@ void handleresponse(char response[], uint8_t pipeNumber){
     setgpioflags(1,0);
   }
 
+  //At some point, write the response somewhere
   printf("Handled %s from %d", response, pipeNumber);
 }
 
