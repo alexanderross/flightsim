@@ -10,6 +10,51 @@ javascript:
     console.log(Http.responseText)
   }
 
+  function renderDriveState(driveid, statedata){
+    var ele = document.getElementById(driveid+"-state");
+    ele.innerHTML = "";
+    if(statedata == null){
+      ele.innerHTML = "Not Available";
+    }else{
+      for(var i = 0; i < statedata.length; i++){
+        var atrcol = document.createElement("div");
+        atrcol.setAttribute("class","column");
+
+        var namelabel = document.createElement("div");
+        namelabel.setAttribute("class","has-text-weight-bold");
+        namelabel.innerHTML = statedata[i].name;
+
+        namelabel.setAttribute("title",statedata[i].label);
+
+        if(statedata[i].val){
+          namelabel.setAttribute("class","has-text-success");
+        }else{
+          namelabel.setAttribute("class","has-text-danger");
+        }
+
+        atrcol.appendChild(namelabel);
+
+        ele.appendChild(atrcol);
+      }
+    }
+    console.log(statedata);
+    console.log(driveid);
+  }
+
+  function refreshDriveStates(){
+    const Http = new XMLHttpRequest();
+    const url="/states.json";
+    Http.open("GET", url);
+    Http.send();
+    Http.onreadystatechange=(e)=>{
+      if(Http.readyState == 4){
+        var adata = JSON.parse(Http.responseText);
+        renderDriveState('pitch', adata.pitch);
+        renderDriveState('roll', adata.roll);
+      }
+    }
+  }
+
   function sendValue(axis, dest, val){
     const Http = new XMLHttpRequest();
     const url="/write?axis="+axis+"&r="+dest+"&v="+val;
@@ -169,6 +214,22 @@ html
                   label.checkbox 
                     input#rollspbox onclick="spdStep(this, 'roll');" type="checkbox" value="1"
                     |  Roll
+      .columns
+        .column.is-full
+          .box 
+            .columns
+              .column#rds
+                div
+                  b.is-size-5 Roll Drive State
+                .columns.is-multiline#roll-state
+                  
+              .column
+                div
+                  b.is-size-5 Pitch Drive State
+                .columns.is-multiline#pitch-state
+                  
+
+                  
 
 
 javascript:
@@ -215,6 +276,8 @@ javascript:
     sendValue(axis, dest, val);
   });
 
+  setInterval(refreshDriveStates, 5000);
+
 
 
 
@@ -258,6 +321,10 @@ css:
     width:1px;
     position: absolute;
     left: 125px;
+  }
+
+  #rds {
+    border-right: 1px solid #000;
   }
 
   #hline{

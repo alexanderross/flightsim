@@ -31,6 +31,9 @@ static char rfcfpath[] = "/tmp/rfpath";
 static char rfcmdpath[] = "/tmp/rfcmdpath"; 
 static char panelcfpath[] = "/tmp/panelpath";
 
+static char pitchdrivestatepath[] = "/tmp/pitch_state";
+static char rolldrivestatepath[] = "/tmp/roll_state";
+
 static char xactiveflag = 'R';
 static char yactiveflag = 'P';
 

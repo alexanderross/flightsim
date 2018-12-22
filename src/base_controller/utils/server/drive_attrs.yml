@@ -1,0 +1,64 @@
+0:
+  label: Alarm
+  on_label: " not detected"
+  off_label: " detected"
+
+1:
+  label: Ready
+  on_label: " to go"
+  off_label: " is not"
+
+2:
+  label: E-Stop
+  on_label: " active"
+  off_label: " inactive"
+
+3:
+  label: Position Deviation
+  on_label: " less than or = to Pn104"
+  off_label: " greater than Pn104"
+
+4:
+  label: Speed Reach
+  on_label: " is gt or = to Pn021 value"
+  off_label: " is less than Pn021 value"
+
+5:
+  label: Torque Reach
+  on_label: " active"
+  off_label: " inactive"
+
+6:
+  label: Zero Speed
+  on_label: " is less than or equal to Pn027"
+  off_label: " is greater than Pn027"
+
+7:
+  label: Run
+  on_label: motor has current
+  off_label: motor has no electricity
+
+8:
+  label: Electromagnetic Brake
+  on_label: onn
+  off_label: offf
+
+9:
+  label: Home Position
+  on_label: onn
+  off_label: offf
+
+10:
+  label: Position Near
+  on_label: Deviation LTE than Pn106
+  off_label: Deviation GT than Pn106
+
+11:
+  label: Torque Limit
+  on_label: LIMITED
+  off_label: Motor torque is below the limit
+
+12:
+  label: Speed Limit
+  on_label: LIMITED
+  off_label: Motor speed is below the limit
