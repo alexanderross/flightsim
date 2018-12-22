@@ -194,11 +194,22 @@ void setgpioflags(int xactive, int yactive){
 
 }
 
+void write_drive_state(char state_str[], char write_path[]){
+  ofstream outputFile;
+  outputFile.open(write_path);
+
+  outputFile << strtol(state_str, NULL, 10) << endl;
+
+  outputFile.close();
+}
+
 void handleresponse(char response[], uint8_t pipeNumber){
   if(pipeNumber == PITCH_PIPE_INDEX){
     setgpioflags(0,1);
+    write_drive_state(response, pitchdrivestatepath);
   }else if(pipeNumber == ROLL_PIPE_INDEX){
     setgpioflags(1,0);
+    write_drive_state(response, rolldrivestatepath);
   }
 
   //At some point, write the response somewhere
@@ -216,13 +227,15 @@ int main(int argc, char** argv) {
   radio.setAutoAck(false);
   radio.setChannel(110);
   radio.setPALevel(RF24_PA_HIGH);
+
+  radio.openReadingPipe(ROLL_PIPE_INDEX, rollrxaddr);
+  radio.openReadingPipe(PITCH_PIPE_INDEX, pitchrxaddr);
+
   radio.printDetails();
 
 
   printf("\n ************ THEM DETAILS IS ABOVE ***********\n");
   
-  radio.openReadingPipe(ROLL_PIPE_INDEX, rollrxaddr);
-  radio.openReadingPipe(PITCH_PIPE_INDEX, pitchrxaddr);
 
   radio.startListening();
 
