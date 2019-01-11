@@ -59,6 +59,8 @@ uint16_t last_used_speed = 0;
 
 uint16_t last_req_speed = 0;
 
+uint16_t current_position = 0;
+
 
 void setup(void)
 {
@@ -304,7 +306,6 @@ uint8_t response_is_valid(char * response_msg){
   }
   
   return 1;
-  
 }
 
 int parse_int_from_read_response(char * response_msg){
@@ -316,7 +317,7 @@ int parse_int_from_read_response(char * response_msg){
   return (int)strtol(tmpasc,NULL,16);
 }
 
-void read_register(int d_register){
+int read_register(int d_register){
   if(d_register > 0 && d_register <= 389){
     driveserial.flush();
 
@@ -394,6 +395,11 @@ void send_speed_command(int requested_speed){
       write_to_register(69, 0);
       write_to_register(68, command);
 
+      write_to_register(71, 4095);
+      write_to_register(70, 30898);
+
+      write_to_register(2,1);
+
       last_req_speed = requested_speed;
     }else{
       Serial.println("SPEED SAME");
@@ -408,18 +414,26 @@ void setdriveenabled(int state){
 void sendposition(int pos){
   //Write the position to IP1
 
-  int rpos = (2500/360.0) * pos * GEAR_REDUCTION;
+  int rpos = (1000/360.0) * pos * GEAR_REDUCTION;
 
-  write_to_register(122, rpos/10000);
-  write_to_register(123, rpos % 10000);
+  write_to_register(120, rpos/10000);
+  write_to_register(121, rpos % 10000);
 
   //Form the command to run POS1
-  uint32_t command = 0x01;
-  //set speed to req #
-  command = command | (1 << 8);
+
+  write_to_register(2,2);
+  write_to_register(117,1);
+
   write_to_register(68, 1);
-  write_to_register(69, command);
+  write_to_register(69, 1024);
+  write_to_register(71, 32767);
+  write_to_register(71, 31743);
   
+}
+
+//Sort of like send position, but absolutez
+void setposition(int pos){
+
 }
 
 void resetposition(){
@@ -435,6 +449,11 @@ void resetposition(){
 
   //We check this flag above to avoid continually entering the reset position loop.
   resetcomplete = 1;
+  current_position = 0;
+}
+
+void checkposition(){
+  //read_register
 }
 
 

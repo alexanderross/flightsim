@@ -173,8 +173,19 @@ void sendresetsignal(){
     sendtorf((1 << RF_RESET_SHIFT));    
 }
 
+// YE PIRATES BE WARNED> THIS IS EXCEPTIONALLY NASTY
+// FOR TRANSLATING THE SIMTOOLS OUTPUT INTO 0-360 position. PITCH IS ESPECIALLY BASTARDLY
+
+
+
+
+// END SHITTY STUFF
+
 void sendcoordstorf(int xcoord, int ycoord){
     uint32_t masky = 0;
+
+    //xcoord and ycoord need to be done.
+
 
     masky = masky | xcoord | (ycoord << 9) | (resetrequested << RF_RESET_SHIFT);
 
@@ -192,7 +203,7 @@ void process_command(char* coord_str){
     // As a reset disables the link, this shouldn't be the primary means of reset (sendresetsignal does it explicitly), but it's a failsafe.
     int x_coord, y_coord;
     int buf_position = 0;
-    char xbuf[3], ybuf[3];
+    char xbuf[4], ybuf[4];
 
     char *current_buf;  
 
