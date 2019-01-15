@@ -72,6 +72,7 @@ uint32_t current_position_steps = 0;
 
 //We need to know this to compare against if we give another command before the previous is complete.
 uint32_t last_requested_position_steps = 0;
+uint16_t last_requested_position = 0;
 
 
 uint8_t current_mode = DRIVE_MODE_LOCATION;
@@ -451,7 +452,7 @@ void setdriveenabled(int state){
 }
 
 void set_zero(){
-  int steps = getrotorposition;
+  int steps = getrotorposition();
   step_offset = -steps;
   current_position = 0;
 }
@@ -474,7 +475,7 @@ void send_position_adjustment(int degrees){
 
 void send_degree_change(int degrees){
   //Some speed adjusting based on how far we need to be going
-  int new_speed = abs(distance * speed_coefficient);
+  int new_speed = abs(degrees * speed_coefficient);
 
   if(new_speed > MAX_MOTOR_SPEED){
     new_speed = MAX_MOTOR_SPEED;
@@ -498,7 +499,7 @@ void send_degree_change(int degrees){
 
 void send_position_command(int pos){
   //Write the position to IP1
-  if(pos != last_req_location){
+  if(pos != last_requested_position){
     checkposition();
 
     if(current_position != pos){
@@ -515,7 +516,7 @@ void send_position_command(int pos){
         distance = pos - current_position;
       }
 
-      last_req_location = pos;
+      last_requested_position = pos;
 
       send_degree_change(distance);
     }
@@ -564,7 +565,7 @@ int getrotorposition(){
 void checkposition(){
 
   current_position_steps = getrotorposition();
-  current_position = ( 360.0 / ( GEAR_REDUCTION * 10000 ) ) * ( (rotor_position + offset) % (GEAR_REDUCTION * 10000) );
+  current_position = ( 360.0 / ( GEAR_REDUCTION * 10000 ) ) * ( (current_position_steps + step_offset) % (GEAR_REDUCTION * 10000) );
 }
 
 
