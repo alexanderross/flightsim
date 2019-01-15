@@ -248,6 +248,9 @@ void process_cmd(int destination, int value){
     }else if(destination == 226){
       //RESTART CONTROLLER
       ESP.restart();
+    }else if(destination == 227){
+      //Adjust position in degrees
+      send_position_adjustment(value);
     }
 
   }else{

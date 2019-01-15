@@ -104,6 +104,11 @@ javascript:
     return true;
   }
 
+  function senddeg(obj, axis){
+    sendValue(axis, 227, document.getElementById("degree-adjust").value);
+  }
+
+
   function spdStep(obj, axis){
     sendValue(axis,224, obj.checked ? 1 : 0);
     return true;
@@ -208,16 +213,12 @@ html
                     |  Roll
               .column
                 div
-                  b.is-size-5 Speed Stepping
-                  p if its enabled on the axis
+                  b.is-size-5 Degree Adjustment
                 div
-                  label.checkbox 
-                    input#pitchspbox onclick="spdStep(this,'pitch')" type="checkbox" value="1"
-                    |  Pitch
-                div
-                  label.checkbox 
-                    input#rollspbox onclick="spdStep(this, 'roll');" type="checkbox" value="1"
-                    |  Roll
+                  input#degree-adjust class="input" type="text"
+                  input.button.is-medium type="submit" onclick="senddeg('roll')" value="Roll"
+                  input.button.is-medium type="submit" onclick="senddeg('pitch')" value="Pitch"
+                    
       .columns
         .column.is-full
           .box 
