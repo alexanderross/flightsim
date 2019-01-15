@@ -15,8 +15,5 @@ Install. Run. Should all work. Further documentation is inevitable once the gene
 
 
 Remaining stuff:   
-The drives need to be able to support continuous rotation - I think simtools will go to the end of the rotation and if the target game keeps rotating, will hit 0. So it'd need to know how to handle something like 178->179->0->1
-
-The controller needs to be aware of the reduction drive of the output and send the position to the driver (which doesn't know and can't be programmed to work with reduction gearing). For mk1, this will be an open system where we can 'trust' the accuracy of the servomotor and the gearbox being accurate.
 
 The idea of easing, or "inertial preemption" is something I'd want to incorporate. I'll explain it more later, but it sits atop assumptions about the movement profile of the games this sim is designed for to allow the drives to implement some 'easing' countermeasures to smooth out any jitteryness and also be an additional safety mechanism against movements that approach 100% of the sim's movement capacity.
