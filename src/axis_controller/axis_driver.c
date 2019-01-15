@@ -139,6 +139,8 @@ void ack_message(){
   int value = read_register(386);
   //Listen to the response
 
+  checkposition();
+
   if(value < 0 ){
     Serial.println("Recieved corrupt response, not sending ack.");
   }else{
@@ -207,7 +209,7 @@ void process_message(char *message){
       resetrequested = 1;
       resetposition();
     }else{
-      sendposition(req_position);
+      send_position_command(req_position);
       resetcomplete = 0;
     }
   }
@@ -235,7 +237,7 @@ void process_cmd(int destination, int value){
       send_speed_command(value);
     }else if(destination == 222){
       //SEND POSITION
-      sendposition(value);
+      send_position_command(value);
     }else if(destination == 223){
       //ENABLE or DISABLE DRIVE
       setdriveenabled(value);
@@ -480,9 +482,13 @@ void send_degree_change(int degrees){
 
   write_to_register(128, new_speed);
 
+  int steps = ((GEAR_REDUCTION * 10000) / 360) * degrees;
 
-  write_to_register(120, rpos/10000);
-  write_to_register(121, rpos % 10000);
+  last_requested_position_steps = current_position_steps + steps;
+
+
+  write_to_register(120, steps/10000);
+  write_to_register(121, steps % 10000);
 
   //Form the command to run POS1
 
@@ -509,6 +515,8 @@ void send_position_command(int pos){
         distance = pos - current_position;
       }
 
+      last_req_location = pos;
+
       send_degree_change(distance);
     }
   }
@@ -518,8 +526,13 @@ void resetposition(){
   //Or put in a speed request here.
   Serial.println("Reset requested");
   send_speed_command(100);
+  int starttime = micros() / 1000000;
   while(digitalRead(ZERO_STOP_PIN)){
     yield();
+    if( (micros()/1000000) > starttime + 20){
+      Serial.println("RESET TIMEOUT");
+      break;
+    }
   }
   Serial.println("Reset zero signaled");
   resetrequested = 0;
@@ -550,7 +563,7 @@ int getrotorposition(){
 
 void checkposition(){
 
-  current_position_steps = getrotorposition;
+  current_position_steps = getrotorposition();
   current_position = ( 360.0 / ( GEAR_REDUCTION * 10000 ) ) * ( (rotor_position + offset) % (GEAR_REDUCTION * 10000) );
 }
 
