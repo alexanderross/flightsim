@@ -16,12 +16,12 @@
 
 //CHANGE FOR EACH AXIS DAMNIT 
 // PITCH---------------------------
-//static char ACK_MSG[] = "P";
-//static char CMD_AXIS_FLAG = 'I';
-//static char POS_AXIS_FLAG = 'P';
-//static char GEAR_REDUCTION = 40;
-//static char MAX_MOTOR_SPEED = 1000;
-//const uint8_t tx_addr[6] = "2Node";
+// static char ACK_MSG[] = "P";
+// static char CMD_AXIS_FLAG = 'I';
+// static char POS_AXIS_FLAG = 'P';
+// static char GEAR_REDUCTION = 40;
+// static char MAX_MOTOR_SPEED = 1000;
+// const uint8_t tx_addr[6] = "2Node";
 // ROLL ---------------------------
 static char ACK_MSG[] = "R";
 static char CMD_AXIS_FLAG = 'O';
