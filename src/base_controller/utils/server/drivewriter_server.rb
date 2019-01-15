@@ -116,15 +116,18 @@ class App < Rack::App
   end
 
   def read_drive_states()
-    roll = File.read(ROLL_STATE_PATH).to_i rescue nil
-    pitch = File.read(PITCH_STATE_PATH).to_i rescue nil
+    roll = File.read(ROLL_STATE_PATH) rescue nil
+    pitch = File.read(PITCH_STATE_PATH) rescue nil
     return {pitch: parse_drive_state(pitch), roll: parse_drive_state(roll)}
   end
 
-  def parse_drive_state(axis_num)
-    return nil if axis_num.nil?
+  def parse_drive_state(axis_data)
+    return nil if axis_data.nil?
 
-    [].tap do |ary|
+    axis_num = axis_data[0..4].to_i
+    axis_position = axis_data[5..7].to_i
+
+    [{position: axis_position}].tap do |ary|
       DRIVE_ATTRS.each do |pos, data|
         ary << DriveStateAttr.new(axis_num, pos, data).to_h
       end 

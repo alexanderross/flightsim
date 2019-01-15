@@ -20,12 +20,14 @@
 //static char CMD_AXIS_FLAG = 'I';
 //static char POS_AXIS_FLAG = 'P';
 //static char GEAR_REDUCTION = 40;
+//static char MAX_MOTOR_SPEED = 1000;
 //const uint8_t tx_addr[6] = "2Node";
 // ROLL ---------------------------
 static char ACK_MSG[] = "R";
 static char CMD_AXIS_FLAG = 'O';
 static char POS_AXIS_FLAG = 'R';
 static char GEAR_REDUCTION = 30;
+static char MAX_MOTOR_SPEED = 1250;
 const uint8_t tx_addr[6] = "3Node";
 // 
 
@@ -39,6 +41,9 @@ RF24 radio(D4,D8);
 const uint8_t rx_addr[6] = "1Node";
 static int ZERO_STOP_PIN = D3;
 
+static int DRIVE_MODE_SPEED = 1;
+static int DRIVE_MODE_LOCATION = 2;
+
 //Timeout for serial reads in microseconds
 const int READ_TIMEOUT = 5000;
 
@@ -48,18 +53,34 @@ const int read_payload_size = 10;
 int resetrequested = 0;
 int resetcomplete = 0;
 
-int use_speed_jump = 0;
-
 int ack_interval = 140000;
+
+//Used for determining how much to speed up depending on position deltas
+int speed_coefficient = 100;
+
 
 int ack_ct = 0;
 
 //We have 8 registers to write to - go through them to allow the accel smoothing for speed mode
-uint16_t last_used_speed = 0;
-
 uint16_t last_req_speed = 0;
 
+//The current position in degrees.
 uint16_t current_position = 0;
+
+//The current position of the drive
+uint32_t current_position_steps = 0;
+
+//We need to know this to compare against if we give another command before the previous is complete.
+uint32_t last_requested_position_steps = 0;
+
+
+uint8_t current_mode = DRIVE_MODE_LOCATION;
+
+
+
+//When we start and read the initial position of the drive (or zero it), we need to be able to 'offset' to get our true zero.
+//Eg. if we reset and the axis is level, but the drive indicates 11000 steps, then our offset is -11000.
+uint32_t step_offset = 0;
 
 
 void setup(void)
@@ -122,8 +143,9 @@ void ack_message(){
     Serial.println("Recieved corrupt response, not sending ack.");
   }else{
 
-    char sendpayload[6];
-    sprintf(sendpayload,"%05d\0",value);
+    //Ack message is 5 bytes depicting state of drive, 3 for current degree position, a utility byte and term char. (10 total.)
+    char sendpayload[10];
+    sprintf(sendpayload,"%05d%03dX\0", value, current_position);
     //Send the response ( 5 digits + 1 end)
     radio.stopListening();
     radio.write(sendpayload,6);
@@ -218,11 +240,11 @@ void process_cmd(int destination, int value){
       //ENABLE or DISABLE DRIVE
       setdriveenabled(value);
     }else if(destination == 224){
-      //USE SPEED REGISTER JUMPING
-      use_speed_jump = value;
+      //SET SPEED COEFFICIENT
+      speed_coefficient = value;
     }else if(destination == 225){
-      //ACK interval
-      ack_interval = value;
+      //ACK interval in 1k cycles
+      ack_interval = value * 1000;
     }else if(destination == 226){
       //RESTART CONTROLLER
       ESP.restart();
@@ -344,6 +366,7 @@ int read_register(int d_register){
         srecbuffer[rcv_len] = driveserial.read();
         rcv_len++;
       }
+      yield();
     }
     srecbuffer[rcv_len]='\0';
 
@@ -373,32 +396,43 @@ void write_to_register(int dest_register, int value){
   }
 }
 
+void switch_to_speed_mode(){
+  if(current_mode != DRIVE_MODE_SPEED){
+    Serial.println("SPEED SAME");
+    write_to_register(2, DRIVE_MODE_SPEED);
+    
+    write_to_register(69, 0);
+    write_to_register(70, 30898);
+    write_to_register(71, 4095);
+    current_mode = DRIVE_MODE_SPEED;
+  }
+}
+
+void switch_to_location_mode(){
+  if(current_mode != DRIVE_MODE_LOCATION){
+    write_to_register(2, DRIVE_MODE_LOCATION);
+    write_to_register(117,1);
+
+    write_to_register(68, 1);
+    write_to_register(69, 1024);
+    write_to_register(70, 32691);
+    write_to_register(71, 32767);
+    current_mode = DRIVE_MODE_LOCATION;
+  }
+}
+
 void send_speed_command(int requested_speed){
     if(last_req_speed != requested_speed){
 
-      //Write the speed to ISR2
-      last_used_speed++;
+      switch_to_speed_mode();
 
-      if(use_speed_jump == 0 ){
-        last_used_speed = 7;
-      }
 
-      if(last_used_speed == 8){
-        last_used_speed = 0;
-      }
-      write_to_register(169 + last_used_speed, requested_speed);
+      write_to_register(176, requested_speed);
 
-      //Form the command to run ISR2
       uint32_t command = 0x01;
       //set speed to req #
-      command = command | (last_used_speed << 8);
-      write_to_register(69, 0);
+      command = command | (8 << 8);
       write_to_register(68, command);
-
-      write_to_register(71, 4095);
-      write_to_register(70, 30898);
-
-      write_to_register(2,1);
 
       last_req_speed = requested_speed;
     }else{
@@ -411,37 +445,78 @@ void setdriveenabled(int state){
   write_to_register(68, command);
 }
 
-void sendposition(int pos){
-  //Write the position to IP1
+void set_zero(){
+  int steps = getrotorposition;
+  step_offset = -steps;
+  current_position = 0;
+}
 
-  int rpos = (1000/360.0) * pos * GEAR_REDUCTION;
+//Doesn't give a shit where the motor is, just moves it n degrees at 400 speed.
+void send_position_adjustment(int degrees){
+
+  int steps = ((GEAR_REDUCTION * 10000) / 360) * degrees;
+  write_to_register(128, 400);
+
+
+  write_to_register(120, steps/10000);
+  write_to_register(121, steps % 10000);
+
+  //Form the command to run POS1
+
+  write_to_register(71, 32767);
+  write_to_register(71, 31743);
+}
+
+void send_degree_change(int degrees){
+  //Some speed adjusting based on how far we need to be going
+  int new_speed = abs(distance * speed_coefficient);
+
+  if(new_speed > MAX_MOTOR_SPEED){
+    new_speed = MAX_MOTOR_SPEED;
+  }
+
+  write_to_register(128, new_speed);
+
 
   write_to_register(120, rpos/10000);
   write_to_register(121, rpos % 10000);
 
   //Form the command to run POS1
 
-  write_to_register(2,2);
-  write_to_register(117,1);
-
-  write_to_register(68, 1);
-  write_to_register(69, 1024);
   write_to_register(71, 32767);
   write_to_register(71, 31743);
-  
 }
 
-//Sort of like send position, but absolutez
-void setposition(int pos){
+void send_position_command(int pos){
+  //Write the position to IP1
+  if(pos != last_req_location){
+    checkposition();
 
+    if(current_position != pos){
+      switch_to_location_mode();
+
+      int distance = 0;
+
+      //We assume the closest path to the pos target from the current pos
+      if(current_position < 40 && pos > 320){
+        distance = pos - 360 - current_position;
+      }else if(current_position > 320 && pos < 40){
+        distance = current_position - 360 - pos;
+      }else{
+        distance = pos - current_position;
+      }
+
+      send_degree_change(distance);
+    }
+  }
 }
 
 void resetposition(){
   //Or put in a speed request here.
   Serial.println("Reset requested");
-  send_speed_command(75);
+  send_speed_command(100);
   while(digitalRead(ZERO_STOP_PIN)){
-    //Keep waiting
+    yield();
   }
   Serial.println("Reset zero signaled");
   resetrequested = 0;
@@ -449,11 +524,31 @@ void resetposition(){
 
   //We check this flag above to avoid continually entering the reset position loop.
   resetcomplete = 1;
-  current_position = 0;
+  set_zero();
+}
+
+int getrotorposition(){
+  int pos_high = read_register(378);
+  int pos_lo = read_register(377);
+  //Listen to the response
+
+  int rotor_position = 0;
+
+  if(pos_high >= 0){
+    rotor_position = pos_high * 10000;
+  }
+
+  if(pos_lo >= 0){
+    rotor_position += pos_lo;
+  }
+
+  return rotor_position;
 }
 
 void checkposition(){
-  //read_register
+
+  current_position_steps = getrotorposition;
+  current_position = ( 360.0 / ( GEAR_REDUCTION * 10000 ) ) * ( (rotor_position + offset) % (GEAR_REDUCTION * 10000) );
 }
 
 

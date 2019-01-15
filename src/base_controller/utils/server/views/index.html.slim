@@ -17,24 +17,28 @@ javascript:
       ele.innerHTML = "Not Available";
     }else{
       for(var i = 0; i < statedata.length; i++){
-        var atrcol = document.createElement("div");
-        atrcol.setAttribute("class","column");
-
-        var namelabel = document.createElement("div");
-        namelabel.setAttribute("class","has-text-weight-bold");
-        namelabel.innerHTML = statedata[i].name;
-
-        namelabel.setAttribute("title",statedata[i].label);
-
-        if(statedata[i].val){
-          namelabel.setAttribute("class","has-text-success");
+        if(statedata[i].position !== undefined){
+          document.getElementById(driveid+"-position").innerHTML = statedata[i].position;
         }else{
-          namelabel.setAttribute("class","has-text-danger");
+          var atrcol = document.createElement("div");
+          atrcol.setAttribute("class","column");
+
+          var namelabel = document.createElement("div");
+          namelabel.setAttribute("class","has-text-weight-bold");
+          namelabel.innerHTML = statedata[i].name;
+
+          namelabel.setAttribute("title",statedata[i].label);
+
+          if(statedata[i].val){
+            namelabel.setAttribute("class","has-text-success");
+          }else{
+            namelabel.setAttribute("class","has-text-danger");
+          }
+
+          atrcol.appendChild(namelabel);
+
+          ele.appendChild(atrcol);
         }
-
-        atrcol.appendChild(namelabel);
-
-        ele.appendChild(atrcol);
       }
     }
     console.log(statedata);
@@ -221,11 +225,15 @@ html
               .column#rds
                 div
                   b.is-size-5 Roll Drive State
+                  span.roll-position 0
+                  span.deg-label Degrees
                 .columns.is-multiline#roll-state
                   
               .column
                 div
                   b.is-size-5 Pitch Drive State
+                  span.pitch-position 0
+                  span.deg-label Degrees
                 .columns.is-multiline#pitch-state
                   
 

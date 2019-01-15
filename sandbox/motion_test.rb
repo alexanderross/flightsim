@@ -1,5 +1,5 @@
 def pitch_test_1
-	(1..89).to_a + (1..88).to_a.reverse + (-89..-1).to_a.reverse + (-88 .. -1).to_a + (1..40).to_a
+	((1..89).to_a + (1..88).to_a.reverse + (-89..-1).to_a.reverse + (-88 .. -1).to_a + (1..40).to_a) + ((1..89).to_a + (1..88).to_a.reverse + (-89..-1).to_a.reverse + (-88 .. -1).to_a + (1..40).to_a).reverse
 end
 
 def pitch_expected_1
@@ -78,7 +78,7 @@ def convert_fs_pitch_to_360(fs_pitch)
 		#If RPM is greater than jump threshold and we're ascending, transition to R4
 		if fs_pitch > 0
 		  region = 2
-		elsif fs_pitch > -90 && fs_pitch > $last_pitch_fscoord && fs_pitch > -90 + TRANSITION_ZONE && $last_pitch_rpm  < RPM_DIR_LOCK
+		elsif fs_pitch > -90 && fs_pitch > $last_pitch_fscoord && fs_pitch < -90 + TRANSITION_ZONE && $last_pitch_rpm > RPM_DIR_LOCK
 		  region = 4
 		elsif fs_pitch < 0
 		  region = 3
@@ -91,7 +91,7 @@ def convert_fs_pitch_to_360(fs_pitch)
 
 		if fs_pitch > 0
 		  region = 1
-		elsif fs_pitch > -90 && fs_pitch > $last_pitch_fscoord && fs_pitch > -90 + TRANSITION_ZONE && $last_pitch_rpm  < RPM_DIR_LOCK
+		elsif fs_pitch > -90 && fs_pitch > $last_pitch_fscoord && fs_pitch < -90 + TRANSITION_ZONE && $last_pitch_rpm < -RPM_DIR_LOCK
 		  region = 3
 		elsif fs_pitch < 0
 		  region = 4
