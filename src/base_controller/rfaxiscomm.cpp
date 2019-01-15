@@ -166,6 +166,7 @@ void readfromcmdmem(){
 
 void fetchandbroadcast(){
   readfromcmdmem();
+
   uint32_t broadcast = readfromsharedmem(rfcfpath, 1);
   if(broadcast != 0){
     char outbuffer[write_payload_size];
@@ -174,7 +175,7 @@ void fetchandbroadcast(){
     uint16_t ycoord = (broadcast & (0x1FF << 9)) >> 9;
     int resetrequested = (broadcast & (1 << 18)) >> 18; 
     
-    sprintf(outbuffer, "P%dR%dS%d", xcoord, ycoord, resetrequested);
+    sprintf(outbuffer, "P%03dR%03dS%d\0", xcoord, ycoord, resetrequested);
 
     broadcasttocontrollers(outbuffer);
   }
