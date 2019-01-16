@@ -16,19 +16,19 @@
 
 //CHANGE FOR EACH AXIS DAMNIT 
 // PITCH---------------------------
-//static char ACK_MSG[] = "P";
-//static char CMD_AXIS_FLAG = 'I';
-//static char POS_AXIS_FLAG = 'P';
-//static char GEAR_REDUCTION = 40;
-//static char MAX_MOTOR_SPEED = 1000;
-//const uint8_t tx_addr[6] = "2Node";
+static char ACK_MSG[] = "P";
+static char CMD_AXIS_FLAG = 'I';
+static char POS_AXIS_FLAG = 'P';
+static char GEAR_REDUCTION = 40;
+static char MAX_MOTOR_SPEED = 1000;
+const uint8_t tx_addr[6] = "2Node";
 // ROLL ---------------------------
- static char ACK_MSG[] = "R";
- static char CMD_AXIS_FLAG = 'O';
- static char POS_AXIS_FLAG = 'R';
- static char GEAR_REDUCTION = 30;
- static char MAX_MOTOR_SPEED = 1250;
- const uint8_t tx_addr[6] = "3Node";
+ // static char ACK_MSG[] = "R";
+ // static char CMD_AXIS_FLAG = 'O';
+ // static char POS_AXIS_FLAG = 'R';
+ // static char GEAR_REDUCTION = 30;
+ // static char MAX_MOTOR_SPEED = 1250;
+ // const uint8_t tx_addr[6] = "3Node";
 // 
 
 SoftwareSerial driveserial(D1, D2);
@@ -121,8 +121,6 @@ void setup(void)
 
   radio.printDetails();
 
-  resetposition();
-
   //Push an ack out to indicate the axis control is started and listening
   ack_message();
   delay(1000);
@@ -131,13 +129,11 @@ void setup(void)
   write_to_register(75, 1);
   delay(3000);
   write_to_register(75, 0);
-  write_to_register(176,0);
-  send_speed_command(0);
 }
 
 void ack_message(){
   // Get the state of the drive, then send it.
-
+  Serial.println("ACK MESSAGE ----------");
   //Write the read command
   int value = read_register(386);
   //Listen to the response
@@ -534,9 +530,14 @@ void resetposition(){
   Serial.println("Reset requested");
   send_speed_command(100);
   int starttime = micros() / 1000000;
-  while(digitalRead(ZERO_STOP_PIN)){
+  int accum = 0;
+  while(accum < 3000){
     yield();
-    if( (micros()/1000000) > starttime + 20){
+    if(!digitalRead(ZERO_STOP_PIN)){
+      accum++;
+    }
+    yield();
+    if( (micros()/1000000) > starttime + 40){
       Serial.println("RESET TIMEOUT");
       starttime = -1;
       break;

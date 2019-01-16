@@ -43,20 +43,19 @@ static uint8_t ROLLACTIVEMASK = 0x40; //01000000 64
 static uint8_t PITCHACTIVEMASK = 0x20;//00100000 32
 
 const int write_payload_size = 10;
-const int read_payload_size = 11;
+const int read_payload_size = 10;
 
 int resetrequested = 0;
 
 
 //Maybe axes this to use one read pipe and have each axes figure out what to get. 
 void broadcasttocontrollers(char broadcaststr[write_payload_size+1]){
-  uint64_t currentwriteypipe = axispipes[0];
 
   radio.stopListening(); 
   
   char writepayload[write_payload_size];
 
-  radio.openWritingPipe(currentwriteypipe);
+  radio.openWritingPipe(txaddr);
 
   if(radio.write(broadcaststr, write_payload_size))
   {
