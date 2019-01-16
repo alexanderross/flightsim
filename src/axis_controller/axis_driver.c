@@ -16,19 +16,19 @@
 
 //CHANGE FOR EACH AXIS DAMNIT 
 // PITCH---------------------------
-// static char ACK_MSG[] = "P";
-// static char CMD_AXIS_FLAG = 'I';
-// static char POS_AXIS_FLAG = 'P';
-// static char GEAR_REDUCTION = 40;
-// static char MAX_MOTOR_SPEED = 1000;
-// const uint8_t tx_addr[6] = "2Node";
+static char ACK_MSG[] = "P";
+static char CMD_AXIS_FLAG = 'I';
+static char POS_AXIS_FLAG = 'P';
+static char GEAR_REDUCTION = 40;
+static char MAX_MOTOR_SPEED = 1000;
+const uint8_t tx_addr[6] = "2Node";
 // ROLL ---------------------------
-static char ACK_MSG[] = "R";
-static char CMD_AXIS_FLAG = 'O';
-static char POS_AXIS_FLAG = 'R';
-static char GEAR_REDUCTION = 30;
-static char MAX_MOTOR_SPEED = 1250;
-const uint8_t tx_addr[6] = "3Node";
+// static char ACK_MSG[] = "R";
+// static char CMD_AXIS_FLAG = 'O';
+// static char POS_AXIS_FLAG = 'R';
+// static char GEAR_REDUCTION = 30;
+// static char MAX_MOTOR_SPEED = 1250;
+// const uint8_t tx_addr[6] = "3Node";
 // 
 
 SoftwareSerial driveserial(D1, D2);
@@ -214,6 +214,8 @@ void process_message(char *message){
       resetcomplete = 0;
     }
   }
+
+  ack_message();
 }
 
 // Get the ASCII message to write value to dest_register on the drive.
@@ -342,14 +344,13 @@ int parse_int_from_read_response(char * response_msg){
     tmpasc[i-7] = response_msg[i];
   }
   tmpasc[4] = '\0';
+  Serial.printf("%d\n", strlen(response_msg));
   return (int)strtol(tmpasc,NULL,16);
 }
 
 int read_register(int d_register){
   if(d_register > 0 && d_register <= 389){
     driveserial.flush();
-
-    Serial.printf("Attempt read %d  \n", d_register);
 
     uint8_t message[10];
     message[0] = 1;
@@ -364,7 +365,6 @@ int read_register(int d_register){
 
     while( srecbuffer[rcv_len] != '\r'){
       if((micros() - starttime) > READ_TIMEOUT){
-        Serial.println("Read timeout exceeded.");
         break;
       }
 
@@ -377,11 +377,10 @@ int read_register(int d_register){
     srecbuffer[rcv_len]='\0';
 
     Serial.printf("GOT %s\n",srecbuffer);
-    Serial.println("--Validating--");
 
-    if(response_is_valid(srecbuffer) == 1){
+    if(strlen(srecbuffer) == 0){
       return -1;
-    }else{
+    } else {
       return parse_int_from_read_response(srecbuffer);
     }
 
@@ -403,8 +402,9 @@ void write_to_register(int dest_register, int value){
 }
 
 void switch_to_speed_mode(){
+
   if(current_mode != DRIVE_MODE_SPEED){
-    Serial.println("SPEED SAME");
+    Serial.println("switching to speed mode");
     write_to_register(2, DRIVE_MODE_SPEED);
     
     write_to_register(69, 0);
@@ -416,6 +416,7 @@ void switch_to_speed_mode(){
 
 void switch_to_location_mode(){
   if(current_mode != DRIVE_MODE_LOCATION){
+    Serial.println("switching to location mode");
     write_to_register(2, DRIVE_MODE_LOCATION);
     write_to_register(117,1);
 
@@ -553,11 +554,15 @@ int getrotorposition(){
 
   if(pos_high >= 0){
     rotor_position = pos_high * 10000;
+  }else{
+    return -1;
   }
 
   if(pos_lo >= 0){
     rotor_position += pos_lo;
   }
+
+  Serial.printf("Rotor position is %d\n", rotor_position);
 
   return rotor_position;
 }
@@ -565,7 +570,12 @@ int getrotorposition(){
 void checkposition(){
 
   current_position_steps = getrotorposition();
-  current_position = ( 360.0 / ( GEAR_REDUCTION * 10000 ) ) * ( (current_position_steps + step_offset) % (GEAR_REDUCTION * 10000) );
+
+  if(current_position == -1){
+    Serial.println("FAILED TO GET ROTOR POSITION");
+  }else{
+    current_position = ( 360.0 / ( GEAR_REDUCTION * 10000 ) ) * ( (current_position_steps + step_offset) % (GEAR_REDUCTION * 10000) );
+  }
 }
 
 
@@ -605,7 +615,7 @@ void loop(void)
   ack_ct++;
 
   if(ack_ct > ack_interval){
-    ack_message();
+    //ack_message();
     ack_ct = 0;
   }
 }
