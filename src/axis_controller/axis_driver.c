@@ -16,19 +16,19 @@
 
 //CHANGE FOR EACH AXIS DAMNIT 
 // PITCH---------------------------
-// static char ACK_MSG[] = "P";
-// static char CMD_AXIS_FLAG = 'I';
-// static char POS_AXIS_FLAG = 'P';
-// static char GEAR_REDUCTION = 40;
-// static char MAX_MOTOR_SPEED = 1000;
-// const uint8_t tx_addr[6] = "2Node";
+//static char ACK_MSG[] = "P";
+//static char CMD_AXIS_FLAG = 'I';
+//static char POS_AXIS_FLAG = 'P';
+//static char GEAR_REDUCTION = 40;
+//static char MAX_MOTOR_SPEED = 1000;
+//const uint8_t tx_addr[6] = "2Node";
 // ROLL ---------------------------
-static char ACK_MSG[] = "R";
-static char CMD_AXIS_FLAG = 'O';
-static char POS_AXIS_FLAG = 'R';
-static char GEAR_REDUCTION = 30;
-static char MAX_MOTOR_SPEED = 1250;
-const uint8_t tx_addr[6] = "3Node";
+ static char ACK_MSG[] = "R";
+ static char CMD_AXIS_FLAG = 'O';
+ static char POS_AXIS_FLAG = 'R';
+ static char GEAR_REDUCTION = 30;
+ static char MAX_MOTOR_SPEED = 1250;
+ const uint8_t tx_addr[6] = "3Node";
 // 
 
 SoftwareSerial driveserial(D1, D2);
@@ -39,7 +39,7 @@ RF24 radio(D4,D8);
 
 // Radio pipe addresses for the 2 nodes to communicate x and y share them.
 const uint8_t rx_addr[6] = "1Node";
-static int ZERO_STOP_PIN = D3;
+static int ZERO_STOP_PIN = D0;
 
 static int DRIVE_MODE_SPEED = 1;
 static int DRIVE_MODE_LOCATION = 2;
@@ -120,6 +120,8 @@ void setup(void)
   //
 
   radio.printDetails();
+
+  resetposition();
 
   //Push an ack out to indicate the axis control is started and listening
   ack_message();
@@ -215,6 +217,8 @@ void process_message(char *message){
       resetcomplete = 0;
     }
   }
+
+  ack_message();
 }
 
 // Get the ASCII message to write value to dest_register on the drive.
@@ -343,6 +347,7 @@ int parse_int_from_read_response(char * response_msg){
     tmpasc[i-7] = response_msg[i];
   }
   tmpasc[4] = '\0';
+  Serial.printf("%d\n", strlen(response_msg));
   return (int)strtol(tmpasc,NULL,16);
 }
 
@@ -365,7 +370,6 @@ int read_register(int d_register){
 
     while( srecbuffer[rcv_len] != '\r'){
       if((micros() - starttime) > READ_TIMEOUT){
-        Serial.println("Read timeout exceeded.");
         break;
       }
 
@@ -378,11 +382,10 @@ int read_register(int d_register){
     srecbuffer[rcv_len]='\0';
 
     Serial.printf("GOT %s\n",srecbuffer);
-    Serial.println("--Validating--");
 
-    if(response_is_valid(srecbuffer) == 1){
+    if(strlen(srecbuffer) == 0){
       return -1;
-    }else{
+    } else {
       return parse_int_from_read_response(srecbuffer);
     }
 
@@ -404,8 +407,9 @@ void write_to_register(int dest_register, int value){
 }
 
 void switch_to_speed_mode(){
+
   if(current_mode != DRIVE_MODE_SPEED){
-    Serial.println("SPEED SAME");
+    Serial.println("switching to speed mode");
     write_to_register(2, DRIVE_MODE_SPEED);
     
     write_to_register(69, 0);
@@ -417,6 +421,7 @@ void switch_to_speed_mode(){
 
 void switch_to_location_mode(){
   if(current_mode != DRIVE_MODE_LOCATION){
+    Serial.println("switching to location mode");
     write_to_register(2, DRIVE_MODE_LOCATION);
     write_to_register(117,1);
 
@@ -533,16 +538,19 @@ void resetposition(){
     yield();
     if( (micros()/1000000) > starttime + 20){
       Serial.println("RESET TIMEOUT");
+      starttime = -1;
       break;
     }
   }
-  Serial.println("Reset zero signaled");
+  if(starttime > 0){
+    Serial.println("Reset zero signaled");
+    set_zero();
+  }
   resetrequested = 0;
   send_speed_command(0);
 
   //We check this flag above to avoid continually entering the reset position loop.
   resetcomplete = 1;
-  set_zero();
 }
 
 int getrotorposition(){
@@ -554,11 +562,15 @@ int getrotorposition(){
 
   if(pos_high >= 0){
     rotor_position = pos_high * 10000;
+  }else{
+    return -1;
   }
 
   if(pos_lo >= 0){
     rotor_position += pos_lo;
   }
+
+  Serial.printf("Rotor position is %d\n", rotor_position);
 
   return rotor_position;
 }
@@ -566,7 +578,12 @@ int getrotorposition(){
 void checkposition(){
 
   current_position_steps = getrotorposition();
-  current_position = ( 360.0 / ( GEAR_REDUCTION * 10000 ) ) * ( (current_position_steps + step_offset) % (GEAR_REDUCTION * 10000) );
+
+  if(current_position == -1){
+    Serial.println("FAILED TO GET ROTOR POSITION");
+  }else{
+    current_position = ( 360.0 / ( GEAR_REDUCTION * 10000 ) ) * ( (current_position_steps + step_offset) % (GEAR_REDUCTION * 10000) );
+  }
 }
 
 
@@ -606,7 +623,7 @@ void loop(void)
   ack_ct++;
 
   if(ack_ct > ack_interval){
-    ack_message();
+    //ack_message();
     ack_ct = 0;
   }
 }
