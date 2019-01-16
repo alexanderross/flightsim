@@ -52,7 +52,7 @@ int resetrequested = 0;
 void broadcasttocontrollers(char broadcaststr[write_payload_size+1]){
   uint64_t currentwriteypipe = axispipes[0];
 
-  radio.stopListening(); //Like what my SO did when I made the grave one-time mistake of saying 'calm down'
+  radio.stopListening(); 
   
   char writepayload[write_payload_size];
 
@@ -128,7 +128,7 @@ uint32_t readfromsharedmem(char * path, int do_clear){
 
 //This is dirty, but it does what it needs to do.
 void readfromcmdmem(){
-  int rf_cmd_desc = open(rfcmdpath , O_RDONLY,O_NONBLOCK);
+  int rf_cmd_desc = open(rfcmdpath, O_RDONLY,O_NONBLOCK);
   char inbuffer[255];
 
   int bytes_read = read(rf_cmd_desc, inbuffer, 255);
@@ -214,7 +214,7 @@ void handleresponse(char response[], uint8_t pipeNumber){
   }
 
   //At some point, write the response somewhere
-  printf("Handled %s from %d", response, pipeNumber);
+  printf("Handled %s from %d\n", response, pipeNumber);
 }
 
 int main(int argc, char** argv) {
@@ -254,7 +254,7 @@ int main(int argc, char** argv) {
 
 
       // Spew it
-      printf("Got response size=%i value=%s\n from %d\r", read_payload_size, response, pipeNum);
+      printf("Got response size=%i value='%s'\n from %d\r\n", read_payload_size, response, pipeNum);
 
       //Send the response msg to some sort of thing. 
     }

@@ -151,7 +151,8 @@ void ack_message(){
     sprintf(sendpayload,"%05d%03dX\0", value, current_position);
     //Send the response ( 5 digits + 1 end)
     radio.stopListening();
-    radio.write(sendpayload,6);
+    Serial.printf("Broadcasting '%s'\n", sendpayload);
+    radio.write(sendpayload,10);
     radio.startListening();
   }
 }
@@ -204,7 +205,7 @@ void process_message(char *message){
     payloaditem = payloaditem + post_forwarding;
     
     //Check reset bytes at end (Sx) - if that is true then flip the reset flag and return
-    Serial.printf("RESET is %c", *payloaditem);
+    Serial.printf("RESET is %c\n", *payloaditem);
 
     if(*payloaditem == '1' && !resetcomplete){
       resetrequested = 1;
@@ -294,7 +295,7 @@ void send_modbus_ascii(int dest_register, int value, uint8_t * message){
   ascii_message[16] = '\n';
   ascii_message[17] = '\0';
 
-  Serial.printf("Writing as %s \n", ascii_message);
+  Serial.printf("Writing message to Drive '%s' \n", ascii_message);
   driveserial.print(ascii_message);
 }
 
@@ -349,7 +350,7 @@ int read_register(int d_register){
   if(d_register > 0 && d_register <= 389){
     driveserial.flush();
 
-    Serial.printf("Attempt read %d  \n", d_register);
+    Serial.printf("Attempting read of Pn%d  \n", d_register);
 
     uint8_t message[10];
     message[0] = 1;
