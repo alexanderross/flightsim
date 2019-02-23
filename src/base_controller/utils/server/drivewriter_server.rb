@@ -17,11 +17,11 @@ CMD_JOIN_CHR= "$"
 DRIVE_ATTRS = YAML.load(File.read("drive_attrs.yml"))
 
 SETUP_SEQUENCE = [
-  [67, 3],
-  [66, 3],
-  [64, 1],
-  [20, 1500],
-  [51, 1500]
+  [68, 9985],
+  [69, 0],
+  [70, 22706],
+  [71, 4095],
+  [2, 3]
 ]
 
 File.mkfifo(RFCOMM_CMD_PATH) unless File.exist?(RFCOMM_CMD_PATH)
@@ -92,6 +92,14 @@ class App < Rack::App
     msg
   end
 
+  get '/status' do 
+    states = read_drive_states
+    {
+      :roll_active => !states[:roll].nil?,
+      :pitch_active => !states[:pitch].nil?
+    }.to_json
+  end
+
   get '/states.json' do 
     read_drive_states.to_json
   end
@@ -105,6 +113,7 @@ class App < Rack::App
     SETUP_SEQUENCE.each do |itm|
         axis = process_axis(params)
         write_to_drive(process_axis(params), itm[0], itm[1])
+        sleep(0.3)
         output << "Wrote #{itm[1]} to #{itm[0]} on axis '#{axis}'"
     end
 
