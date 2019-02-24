@@ -112,7 +112,7 @@ class App < Rack::App
     output = ""
     SETUP_SEQUENCE.each do |itm|
         axis = process_axis(params)
-        write_to_drive(process_axis(params), itm[0], itm[1])
+        write_to_drive(AxisCommand.new(process_axis(params), itm[0], itm[1]))
         sleep(0.3)
         output << "Wrote #{itm[1]} to #{itm[0]} on axis '#{axis}'"
     end
