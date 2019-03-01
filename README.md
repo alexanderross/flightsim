@@ -37,13 +37,9 @@ First we install stretch lite onto the Pi, be sure to do all the things with wpa
 
 become root
 
-install git with apt-get 
-
 go into raspi-config and enable SPI
 
-clone this repo into somewhere reasonable. 
-
-run setup.sh in the base dir
+run ```bash <(curl -s https://raw.githubusercontent.com/alexanderross/flightsim/master/setup.sh)```
 
 reboot
 
