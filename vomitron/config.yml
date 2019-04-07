@@ -1,0 +1,126 @@
+cycle_interval: 30
+
+items:
+
+  - id: pitch_slow
+    pairable: true
+    command: ?pc=176|75&rc=176|0
+    axis: pitch
+    probability: 0.6
+    label: Slow pitch
+    manual: false
+
+  - id: pitch_med
+    pairable: true
+    command: ?pc=176|200&rc=176|0
+    axis: pitch
+    probability: 0.4
+    label: Moderate pitch
+    manual: false
+
+  - id: pitch_fast
+    pairable: true
+    command: ?pc=176|500&rc=176|0
+    axis: pitch
+    probability: 0.1
+    label: Fast pitch
+    manual: false
+
+  - id: pitch_90_b
+    pairable: true
+    command: false
+    axis: pitch
+    probability: 0.3
+    label: 90' Back
+    manual: true
+
+  - id: pitch_90_f
+    pairable: true
+    command: false
+    axis: pitch
+    probability: 0.3
+    label: 90' Forward
+    manual: true
+
+  - id: pitch_invert
+    pairable: true
+    command: false
+    axis: pitch
+    probability: 0.3
+    label: Pitch Inverted
+    manual: true
+
+  - id: pitch_zero
+    pairable: true
+    command: false
+    axis: pitch
+    probability: 0.6
+    label: Pitch flat
+    manual: true
+
+  - id: roll_slow
+    pairable: true
+    command: ?pc=176|0&rc=176|100
+    axis: roll
+    probability: 0.6
+    label: Slow roll
+    manual: false
+
+  - id: roll_med
+    pairable: true
+    command: ?pc=176|0&rc=176|500
+    axis: roll
+    probability: 0.4
+    label: Moderate roll
+    manual: false
+
+  - id: roll_fast
+    pairable: true
+    command: ?pc=176|0&rc=176|1000
+    axis: roll
+    probability: 0.2
+    label: Fast roll
+    manual: false
+
+  - id: roll_90_l
+    pairable: true
+    command: false
+    axis: roll
+    probability: 0.3
+    label: Roll 90 left
+    manual: true
+
+  - id: roll_90_r
+    pairable: true
+    command: false
+    axis: roll
+    probability: 0.3
+    label: Roll 90 right
+    manual: true
+
+  - id: roll_invert
+    pairable: true
+    command: false
+    axis: roll
+    probability: 0.3
+    label: Roll Inverted
+    manual: true
+
+  - id: roll_zero
+    pairable: true
+    command: false
+    axis: roll
+    probability: 0.6
+    label: Roll flat
+    manual: true
+
+  - id: chaos
+    pairable: false
+    command: false
+    axis: both
+    probability: 0.2
+    label: Chaos
+    manual: true
+
+
+

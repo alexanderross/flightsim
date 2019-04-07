@@ -1,0 +1,270 @@
+javascript:
+
+  function suspend(nostop){
+    var xhr = new XMLHttpRequest();
+    var path = "suspend"
+    if(nostop == 'y'){
+      path = path+"?nostop=y"
+    }
+    xhr.open('GET', path);
+    xhr.send();
+  }
+
+  function commence(evt){
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'commence');
+    xhr.send();
+  }
+
+  function setav(state){
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', "autopick?srs=y&state="+state);
+    xhr.send();  
+  }
+
+  setInterval(function(){
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'data.json');
+    xhr.send();
+
+    xhr.onreadystatechange = function () {
+      var DONE = 4; // readyState 4 means the request is done.
+      var OK = 200; // status 200 is a successful return.
+      if (xhr.readyState === DONE) {
+        if (xhr.status === OK) {
+          var resp = JSON.parse(xhr.response);
+          
+          document.getElementById("total-votes").innerHTML = parseInt(resp.total_votes).toLocaleString();
+          if(resp.cycle_enabled == "1"){
+            document.getElementById("enabled-state").setAttribute("class","upv");
+            document.getElementById("enabled-state").innerHTML = "Voting Enabled ";
+          }else{
+            document.getElementById("enabled-state").setAttribute("class","downv");
+            document.getElementById("enabled-state").innerHTML = "Voting Disabled ";
+          }
+
+          if(resp.autopick == "1"){
+            document.getElementById("autovote").setAttribute("style","display: inline;");
+          }else{
+            document.getElementById("autovote").setAttribute("style","display: none;");
+          }
+
+          if(resp.fs_stats.server == "DOWN"){
+            document.getElementById("server-down").setAttribute("class","down")
+          }else{
+
+            document.getElementById("server-down").setAttribute("class","up")
+
+            if(resp.fs_stats.pitch_active){
+
+              document.getElementById("pitch-down").setAttribute("class","up")
+            }else{
+              document.getElementById("pitch-down").setAttribute("class","down")
+            }
+
+            if(resp.fs_stats.roll_active){
+              document.getElementById("roll-down").setAttribute("class","up")
+            }else{
+              document.getElementById("roll-down").setAttribute("class","down")
+            }
+          }
+
+
+          document.getElementById("sec-remaining").innerHTML = Math.max(parseInt(resp.sec_remaining),0);
+          if(resp.last_motion !== undefined && resp.last_motion !== null){
+            document.getElementById("last-motion").innerHTML = resp.last_motion.label;
+          }
+
+          var opt_container = document.getElementById("opts");
+          opt_container.innerHTML = "";
+
+          for (var item in resp["options"]){
+
+            var boxclass = "box";
+            var charclass = "option-char";
+
+            if (item == resp.top_char){
+              boxclass = "box topbox";
+              charclass = "option-char topchar"
+            }
+
+            var topitem = document.createElement("DIV");
+            topitem.setAttribute("class", "column is-2");
+            var newitem = document.createElement("DIV");
+            newitem.setAttribute("class", boxclass);
+            newitem.setAttribute("data-vote-ct", resp["votes"][item]);
+            var pct = 0
+            if(parseInt(resp.total_votes) != 0){
+              pct =  Math.round((parseInt(resp["votes"][item]) / parseInt(resp.total_votes))*100);
+            }
+
+            var chspan = document.createElement("DIV");
+            chspan.setAttribute("class", charclass);
+            chspan.innerHTML = ">"+item;
+
+            var nispan = document.createElement("DIV");
+            nispan.innerHTML = resp["options"][item]["label"];
+            nispan.setAttribute("class", "option-name");
+
+            var ctspan = document.createElement("DIV");
+            ctspan.setAttribute("class","option-vote");
+            ctspan.innerHTML = parseInt(resp["votes"][item]).toLocaleString();
+
+            var pctspan = document.createElement("DIV");
+            pctspan.setAttribute("class","option-pct");
+            pctspan.innerHTML = pct.toString() + "%";
+
+            topitem.appendChild(chspan);
+            newitem.appendChild(nispan);
+            newitem.appendChild(pctspan);
+            newitem.appendChild(ctspan);
+
+            topitem.appendChild(newitem);
+            opt_container.appendChild(topitem);
+          }
+
+        } else {
+          console.log('Error: ' + xhr.status); // An error occurred during the request.
+        }
+      }
+    };
+  }, 1000);
+
+css:
+  body {
+    background-color: #000;
+  }
+  .topsection{
+    padding: 0em 1.5em !important;
+  }
+  .option-vote{
+    position: relative;
+    right: 0px;
+    top: 0px;
+  }
+
+  .box{
+    padding-top: .25em !important;
+    background-color: #b5b5b5 !important;
+    height: 100px !important;
+  }
+
+  .topbox{
+    border: 3px solid #2de02d !important;
+    background-color: #6aff6a !important;
+  }
+
+  .topchar{
+    color: #0f0 !important;
+  }
+
+  .option-pct{
+    position: relative;
+    right: 0px;
+    float: right;
+    bottom: 0px;
+    font-size: 1.75em;
+    font-weight: bold;
+    color: #282a94;
+  }
+
+  .option-name{
+    font-size: 1em;
+    height: 52px;
+    font-weight: bold;
+  }
+
+  .option-char{
+    font-size: 1.6em;
+    font-weight: bold;
+    color: #BBBBBB;
+  }
+  .upv{
+    color: #289a16;
+    border: 1px solid #060;
+  }
+
+  .downv{
+     color: #F00;
+     border: 1px solid #F00;
+  }
+
+  .down {
+    color: #F00;
+  }
+
+  .up {
+    color: #289a16;
+  }
+
+  #manbtns{
+    position:relative;
+    top: 300px;
+  }
+
+  #autovote{
+    border: 1px solid #33F;
+    color: #33F;
+    font-weight: bold;
+    margin-left: 10px;
+    border-radius: 5px;
+    padding: 2px;
+  }
+
+  .manb{
+    width: 100px;
+    height: 60px;
+    border: 1px solid #555;
+    color: #333;
+    font-weight:bold;
+    float: left; 
+    margin-left: 50px;
+    background-color: #999;
+  }
+
+
+
+html
+  head
+    title Vomitron Status
+    link rel='stylesheet' type='text/css' href='https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css'
+  
+
+body
+  .topsection.section.has-background-light
+    .container
+      .columns 
+        .column.is-2
+          b Votes: 
+          span#total-votes 0
+          span#autovote AUTO
+
+        .column.is-4
+          b Last Action: 
+          span#last-motion ?
+
+        .column.is-2
+          b#enabled-state.up Voting Enabled &nbsp
+
+          b#server-down.down S
+          b#roll-down.down R
+          b#pitch-down.down P
+
+        .column.is-4
+          b Seconds Remaining: 
+          span#sec-remaining 0
+
+  .topsection.section
+    .container
+      #opts.options_container.columns.is-multiline
+
+  #manbtns
+    #stopbtn.manb onclick="suspend('n');" STOP
+    #softstopbtn.manb onclick="suspend('y');" SOFTSTOP
+    #commencebtn.manb onclick="commence();" COMMENCE 
+    #autopenbtn.manb onclick="setav('1');" AUTOPICK
+    #autopdibtn.manb onclick="setav('0');" NOAUTOPICK
+
+
+

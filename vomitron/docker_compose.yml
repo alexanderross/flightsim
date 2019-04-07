@@ -1,0 +1,58 @@
+version: '2'
+
+services:
+
+  web:
+    image: alexanderross/vomitron:3.4
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      MEMCACHED_URL: "memcached:11211"
+    links:
+    - redis:redis
+    - memcached:memcached
+    depends_on:
+    - memcached
+    - redis
+
+    restart: on-failure
+
+  runner:
+    image: alexanderross/vomitron:3.4
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    links:
+    - redis:redis
+    depends_on:
+      - redis
+    command:
+    - ruby
+    - runner.rb
+
+  chatbot:
+    image: alexanderross/vomitron:3.4
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    links:
+    - redis:redis
+    depends_on:
+      - redis
+    command:
+    - ruby
+    - twitch_chat.rb
+
+  WebLB:
+    image: rancher/lb-service-haproxy:v0.9.6
+    ports:
+    - 80:80/tcp
+    labels:
+      io.rancher.container.agent.role: environmentAdmin,agent
+      io.rancher.container.agent_service.drain_provider: 'true'
+      io.rancher.container.create_agent: 'true'
+      
+  redis:
+    image: redis:5.0.3-alpine
+
+  memcached:
+    image: memcached:latest
+
+
