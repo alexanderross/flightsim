@@ -9,6 +9,7 @@ items:
     probability: 0.6
     label: Slow pitch
     manual: false
+    duration_s: 10
 
   - id: pitch_med
     pairable: true
@@ -17,14 +18,16 @@ items:
     probability: 0.4
     label: Moderate pitch
     manual: false
+    duration_s: 10
 
   - id: pitch_fast
     pairable: true
     command: ?pc=176|500&rc=176|0
     axis: pitch
-    probability: 0.1
+    probability: 0.05
     label: Fast pitch
     manual: false
+    duration_s: 10
 
   - id: pitch_90_b
     pairable: true
@@ -65,6 +68,7 @@ items:
     probability: 0.6
     label: Slow roll
     manual: false
+    duration_s: 10
 
   - id: roll_med
     pairable: true
@@ -73,14 +77,16 @@ items:
     probability: 0.4
     label: Moderate roll
     manual: false
+    duration_s: 10
 
   - id: roll_fast
     pairable: true
     command: ?pc=176|0&rc=176|1000
     axis: roll
-    probability: 0.2
+    probability: 0.05
     label: Fast roll
     manual: false
+    duration_s: 10
 
   - id: roll_90_l
     pairable: true
@@ -118,7 +124,7 @@ items:
     pairable: false
     command: false
     axis: both
-    probability: 0.2
+    probability: 0.1
     label: Chaos
     manual: true
 
