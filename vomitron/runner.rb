@@ -8,7 +8,7 @@ AUTOPICK_TIME = 10
 class RunnableItem
   include CycleManager
 
-  attr_reader :probability, :id, :label, :commands
+  attr_reader :probability, :id, :label, :commands, :duration
   def initialize(instructions)
     @instructions = Array(instructions)
     build_attrs
@@ -17,6 +17,7 @@ class RunnableItem
   def build_attrs
     if(@instructions.size == 1)
       @probability = @instructions[0].probability
+      @duration = @instructions[0].duration_s
       @id = @instructions[0].id
       @label = @instructions[0].label
       @commands = [@instructions[0].command]
@@ -25,15 +26,23 @@ class RunnableItem
     end
   end
 
+  #Executes command and returns how long it should be run for.
   def execute
     execute_cmd(execution_path)
+    if self.duration
+      return Time.now.to_i + self.duration
+    else
+      return 0
+    end
   end
 
   def build_composite_args
     @probability = @instructions.sum(&:probability) / @instructions.size
+    @duration = @instructions.reject{|i| i.manual}.map{|itm| itm.duration_s.to_i).tap{|ds| ds.reduce(:+) / ds.size.to_f}.round(0)
     @id = @instructions.map(&:id).join("_")
     @label = @instructions.map(&:label).join(" and ")
     @commands = @instructions.map(&:command)
+
   end
 
   def execution_path
@@ -176,9 +185,19 @@ class Runner
         post_message("With #{commas(top_option[1].to_i)} of #{commas(total)} votes, #{winner.label} is the winner!")
         set_last_motion(winner)
         puts winner
-        @opt_factory.item_dict[winner.id].execute
+        cmd_end_time = @opt_factory.item_dict[winner.id].execute
+        @cmd_die_time = cmd_end_time if((cmd_end_time) != 0)
       end
       reset_cycle
+    end
+  end
+
+  def kill_current_cmd_if_needs_to_die()
+    if(@cmd_die_time != 0)
+      if(Time.now >= @cmd_die_time)
+        stop_machine
+        @cmd_die_time = 0
+      end
     end
   end
 
@@ -191,6 +210,8 @@ class Runner
     while true
       sleep 1
       reset_cycle if(@run_start == nil)
+
+      kill_current_cmd_if_needs_to_die()
 
       if Time.now.to_i > @run_end
         finish_cycle
