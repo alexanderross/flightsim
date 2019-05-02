@@ -38,7 +38,7 @@ class RunnableItem
 
   def build_composite_args
     @probability = @instructions.sum(&:probability) / @instructions.size
-    @duration = @instructions.reject{|i| i.manual}.map{|itm| itm.duration_s.to_i).tap{|ds| ds.reduce(:+) / ds.size.to_f}.round(0)
+    @duration = @instructions.reject{|i| i.manual}.map{|itm| itm.duration_s.to_i}.tap{|ds| ds.reduce(:+) / ds.size.to_f}.round(0)
     @id = @instructions.map(&:id).join("_")
     @label = @instructions.map(&:label).join(" and ")
     @commands = @instructions.map(&:command)
